@@ -49,6 +49,11 @@ if(isset($response->response->docs)){
             $doc = solr_get_doc_by_id($syn->acceptedNameUsageID_s . '-' . $syn->snapshot_version_s);
             $doc->synonym_found = $syn;
 
+            // each search result has a unique id
+            // we can't use the id of the accepted taxon because it might be returned 
+            // multiple times if it has multiple specimens
+            $doc->suggest_result_id = $syn->id; 
+
             $display = $doc->scientificName_s
                 . ' '
                 . (isset($doc->scientificNameAuthorship_s) ? $doc->scientificNameAuthorship_s : '') 
@@ -62,6 +67,9 @@ if(isset($response->response->docs)){
             if($doc->taxonomicStatus_s != 'Accepted'){
                 $display .= " [{$doc->taxonomicStatus_s}]";
             }
+
+            // accepted taxa are only returned once
+            $doc->suggest_result_id = $doc->id; 
 
         }
 
