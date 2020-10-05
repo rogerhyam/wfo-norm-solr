@@ -16,6 +16,8 @@ It assumes dynamic field generation using the appropriate field name endings apa
 Source: *
 Destination: _text_
 
+In dev start it with a gig of memory ./bin/solr start -m 1g
+
 The query URI for the SOLR server is specified in the config.php file
 
 

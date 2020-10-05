@@ -4,12 +4,14 @@ require_once('config.php');
 require_once('curl_functions.php');
 require_once('solr_functions.php');
 
+// for dev environment we do the job of .htaccess 
+if(preg_match('/^\/suggest.php/', $_SERVER["REQUEST_URI"])) return false;
+
 $path_parts = explode('/', $_SERVER["REQUEST_URI"]);
 
 // path should be of the form /wfo-id/format
 
 // FIXME: different renderings
-// FIXME: work with .htaccess
 
 array_shift($path_parts); // lose the first blank one
 

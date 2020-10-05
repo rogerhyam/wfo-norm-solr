@@ -110,10 +110,16 @@ while($row = fgetcsv($file, 2000, "\t")){
             if($val){
                 $solr_doc[$field . '_dt'] = $val . 'T00:00:00Z';
             }
-            
         }
 
     }
+
+    // make our own combined name field for lookups and store it lower case
+    $full_name =  '<i>' . $solr_doc['scientificName_s'] . '</i>';
+    if(isset($solr_doc['scientificNameAuthorship_s'])) $full_name = $full_name . ' ' . $solr_doc['scientificNameAuthorship_s'];
+    if(isset($solr_doc['family_s']) && $solr_doc['family_s'] != $solr_doc['scientificName_s'] ) $full_name = $full_name . ' [' . $solr_doc['family_s'] .']';
+    $solr_doc['full_name_s_lower'] = strip_tags($full_name);
+    $solr_doc['full_name_s'] = $full_name;
 
     $solr_docs[] = $solr_doc;
 
