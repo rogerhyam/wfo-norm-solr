@@ -15,8 +15,7 @@ if(!$_GET['q']){
     echo json_encode(array());
 }
 
-
-$parts = explode(' ', $_GET['q']);
+$parts = explode(' ', trim($_GET['q']));
 $parts = array_map(function($pat) { return trim($pat) . '*' ; }, $parts);
 $q = implode(' ', $parts);
 
@@ -32,10 +31,9 @@ $response = json_decode(solr_run_search($query));
 $results = array();
 
 // for highlighting
-$patterns = explode(' ', $_GET['q']);
+$patterns = explode(' ', trim($_GET['q']));
 $highlighted = array_map(function($pat) { return '{$1}'; }, $patterns);
 $patterns = array_map(function($pat) { return "/($pat)/i"; }, $patterns);
-
 
 if(isset($response->response->docs)){
 
@@ -73,22 +71,17 @@ if(isset($response->response->docs)){
 
         }
 
-//$doc->patterns = $patterns;
-//$doc->highlighted = $highlighted;
-//$doc->search_display_no_highlight = $display;
-        $doc->search_display = preg_replace($patterns, $highlighted, $display);
-        $doc->search_display = str_replace('{', '<strong>', $doc->search_display);
-        $doc->search_display = str_replace('}', '</strong>', $doc->search_display);
+        $display = preg_replace($patterns, $highlighted, $display);
+        $display = str_replace('{', '<strong>', $display);
+        $display = str_replace('}', '</strong>', $display);
 
+        $doc->search_display = $display;
         
         $results[] = $doc;
 
     }
 
 }
-
-
-
 
 header('Content-Type: application/json');
 echo json_encode($results);
