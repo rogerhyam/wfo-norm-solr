@@ -6,60 +6,42 @@ require_once('solr_functions.php');
 
 // for dev environment we do the job of .htaccess 
 if(preg_match('/^\/suggest.php/', $_SERVER["REQUEST_URI"])) return false;
+if(preg_match('/^\/gql.php/', $_SERVER["REQUEST_URI"])) return false;
 
+// path should be of the form /wfo-id/format or /terms/
 $path_parts = explode('/', $_SERVER["REQUEST_URI"]);
-
-// path should be of the form /wfo-id/format
-
-// FIXME: different renderings
-
 array_shift($path_parts); // lose the first blank one
 
-if(count($path_parts) < 1){
-    echo "This is the welcome page\n";
+// do the welcome page if there is not id
+if(strlen($path_parts[0]) == 0){
+    include('welcome.php');
     exit;
 }
 
-// first argument is always the wfo-id. It may be qualified with a date or not.
+$format = get_format($path_parts);
+
+// first argument is blank or the wfo-id.
+// It may be qualified with a date or not.
 if(preg_match('/^wfo-[0-9]{10}$/', $path_parts[0])){
+    // were were passed a name id
     $wfo_root_id = $path_parts[0];
     $wfo_qualified_id = null;
     $version_id = null;
 }else if(preg_match('/^wfo-[0-9]{10}-[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
+    // we were passed a taxon id
     $wfo_qualified_id = $path_parts[0];
     $wfo_root_id = substr($wfo_qualified_id, 0, 14);
     $version_id = substr($wfo_qualified_id, -7);
+}else if(preg_match('/^terms$/', $path_parts[0])){
+    // they are looking for a term in the vocabulary
+    include('terms.php');
+    exit;
 }else{
     header("HTTP/1.0 400 Bad Request");
     echo "Unrecognised WFO id format: \"{$path_parts[0]}\"";
     exit;
 }
 
-// second argument is the format - or may be missing
-$formats = array('json','rdf','html','csv');
-
-if(isset($path_parts[1])){
-    if(in_array($path_parts[1], $formats)){
-        $format = $path_parts[1];
-    }else{
-        header("HTTP/1.0 400 Bad Request");
-        echo "Unrecognised data format \"{$path_parts[1]}\"";
-        exit;
-    }
-}else{
-
-    // if the format is missing we redirect to the default format
-    // always 303 redirect from the core object URIs
-    $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
-                . "://$_SERVER[HTTP_HOST]/"
-                . $path_parts[0]
-                . '/'
-                . $formats[0];
- 
-                header("Location: $redirect_url",TRUE,303);
-                echo "Found: Redirecting to data";
-                exit;
-}
 
 // now we have enough to make decisions about where to send people
 
@@ -67,70 +49,52 @@ if(isset($path_parts[1])){
 // the useages to be chosen between.
 if(!$version_id){
 
-    $name = (Object)array(
-        'uri' => get_uri($wfo_root_id),
-        'usages' => array()
-    );
-
-    $query = array(
-        'query' => 'taxonID_s:' . $wfo_root_id,
-        'sort' => 'snapshot_version_s desc'
-    );
-    $response = json_decode(solr_run_search($query));
-
-    $preferred = true; 
-    foreach ($response->response->docs as $usage) {
-        $usage->uri = get_uri($usage->id);
-        if($usage->taxonomicStatus_s == 'Synonym'){
-            $usage->synonym_of_taxon = array('uri' => get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s));
-        }
-
-        // tag the first one as the preferred one
-        $usage->preferred = $preferred;
-        $preferred = false;
-
-        $name->usages[] = $usage;
-    }
-
-    header('Content-Type: application/json');
-    echo json_encode($name);
-    exit;
+    $graph = new \EasyRdf\Graph();
+    $name = getTaxonNameResource($graph, $wfo_root_id);
+    output($graph, $format);
 
 }else{
 
     // we have a versioned taxon id so check it exists then render it
-    $taxon = solr_get_doc_by_id($wfo_qualified_id);
+    $taxon_solr = solr_get_doc_by_id($wfo_qualified_id);
 
     // no taxon
-    if(!$taxon){
+    if(!$taxon_solr){
         header("HTTP/1.0 404 Not Found");
         echo "No taxon was found with id $wfo_qualified_id";
         exit;
     }
 
-    // this version of the taxon is actually a synonym and data for it will be provided in its accepted version's data document
-    // so 303 redirect to that
-    if($taxon->taxonomicStatus_s == 'Synonym'){
+    // It should be impossible to request a versioned synonym
+    // if a wfo "taxon" is sunk it isn't a taxon it is a name.
+    // we wouldn't publish these links or expect people to arrive here
+    // but just in case.
+    if($taxon_solr->taxonomicStatus_s == 'Synonym'){
 
-        $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
-            . "://$_SERVER[HTTP_HOST]/"
-            . $taxon->acceptedNameUsageID_s
-            . '-'
-            . $taxon->snapshot_version_s
-            . '/'
-            . $format;
+        $redirect_url = get_uri($taxon_solr->acceptedNameUsageID_s . '-' . $taxon_solr->snapshot_version_s);
+        header("Location: $redirect_url",TRUE,303);
+        echo "See Other: The accepted taxon for this name";
+        exit;
+    }
+    
+    // Let's start building.
+    $taxon_uri = get_uri($taxon_solr->id);
 
-            header("Location: $redirect_url",TRUE,303);
-            echo "Synonymous taxon. Redirecting to accepted taxon $taxon->acceptedNameUsageID_s";
-            exit;
+    $graph = new \EasyRdf\Graph();
+    $taxon_rdf = $graph->resource($taxon_uri, 'wfo:TaxonConcept');
 
+    // nice link the human readable web page
+
+  
+    // taxonomic status mixes synonymy and editorial so make it pure!
+    if(!preg_match('/Synonym/', $taxon_solr->taxonomicStatus_s)){
+        $taxon_rdf->set('wfo:editorialStatus', $taxon_solr->taxonomicStatus_s);
     }
 
-    // we got to here and have an accepted taxon.
-    // lets build it into a complete object then call a renderer.
 
-    // add the full uri
-    $taxon->uri = get_uri($taxon->id);
+    
+    // Insert the name
+    $taxon_rdf->add('wfo:hasName', getTaxonNameResource($graph, $wfo_root_id));
 
     // Link out to other taxonomies
     // get a list in descending order
@@ -144,7 +108,7 @@ if(!$version_id){
         // work through the list to find self
         for ($i=0; $i < count($response->response->docs) ; $i++) {
             $v = $response->response->docs[$i];
-            if($v->snapshot_version_s == $taxon->snapshot_version_s){
+            if($v->snapshot_version_s == $taxon_solr->snapshot_version_s){
                 $my_index = $i;
             }
         }
@@ -156,9 +120,11 @@ if(!$version_id){
             // synonym it is replaced by the accepted taxon
             $replacement = $response->response->docs[$my_index-1];
             if($replacement->taxonomicStatus_s == 'Synonym'){
-                $taxon->isReplacedBy = array( 'uri' => get_uri($replacement->acceptedNameUsageID_s . '-'. $replacement->snapshot_version_s));
+                // $taxon->isReplacedBy = array( 'uri' => get_uri($replacement->acceptedNameUsageID_s . '-'. $replacement->snapshot_version_s));
+                $taxon_rdf->add('dc:isReplacedBy', $graph->resource(get_uri($replacement->acceptedNameUsageID_s . '-'. $replacement->snapshot_version_s)) );
             }else{
-                $taxon->isReplacedBy = array( 'uri' => get_uri($replacement->id));
+                //$taxon->isReplacedBy = array( 'uri' => get_uri($replacement->id));
+                $taxon_rdf->add('dc:isReplacedBy', $graph->resource(get_uri($replacement->id)) );
             }
         }
 
@@ -174,11 +140,13 @@ if(!$version_id){
                 // tricky situation. Accepted taxon is errected from previous synonym
                 // this taxon is proparte synonym of whatever the accepted taxon was but it is a taxon-taxon relationship
                 // Could be "errected from" - split from 
-                $taxon->derivedFrom = array( 'uri' => get_uri($theReplaced->acceptedNameUsageID_s . '-'. $theReplaced->snapshot_version_s));
+                // $taxon->derivedFrom = array( 'uri' => get_uri($theReplaced->acceptedNameUsageID_s . '-'. $theReplaced->snapshot_version_s));
+                $taxon_rdf->add('dc:source', $graph->resource(get_uri($theReplaced->acceptedNameUsageID_s . '-'. $theReplaced->snapshot_version_s)) );
             }else{                    
                 // easy case. Accepted replaces old version of accepted.
                 // this also covers other possible taxonomic statuses like Unknown status.
-                $taxon->replaces = array( 'uri' => get_uri($theReplaced->id)) ;
+                // $taxon->replaces = array( 'uri' => get_uri($theReplaced->id)) ;
+                $taxon_rdf->add('dc:replaces', $graph->resource(get_uri($theReplaced->id)));
             }
             
         }
@@ -186,17 +154,18 @@ if(!$version_id){
     }
 
     // add parent taxon
-    $parent = solr_get_doc_by_id($taxon->parentNameUsageID_s . '-' . $taxon->snapshot_version_s);
-    if($parent){
-        $taxon->parent_taxon = array(
-            'uri' => get_uri($parent->id)
-        );
+    if(isset($taxon_solr->parentNameUsageID_s)){
+        $parent = solr_get_doc_by_id($taxon_solr->parentNameUsageID_s . '-' . $taxon_solr->snapshot_version_s);
+        if($parent){
+            //$taxon_rdf->add('dwc:parentNameUsageID',$graph->resource(get_uri($parent->id)) );
+            $taxon_rdf->add('dc:isPartOf',$graph->resource(get_uri($parent->id)) );
+        }
     }
-    
+
     // add child taxa
     $query = array(
         'query' => 'parentNameUsageID_s:' . $wfo_root_id,
-        'filter' => 'snapshot_version_s:' . $taxon->snapshot_version_s,
+        'filter' => 'snapshot_version_s:' . $taxon_solr->snapshot_version_s,
         'fields' => 'id',
         'limit' => 1000000,
         'sort' => 'id asc'
@@ -204,38 +173,201 @@ if(!$version_id){
     $response = json_decode(solr_run_search($query));
     if($response->response->numFound > 0){
         foreach ($response->response->docs as $kid) {
-            $taxon->child_taxa[] = array( 'uri' => get_uri($kid->id));
+            $taxon_rdf->add('dc:hasPart',$graph->resource(get_uri($kid->id)) );
         }
-    }else{
-        $taxon->child_taxa = array();
     }
 
     // add synonymous taxa
-
-    // FIXME: these are actually names and should have links to names.
-
     $query = array(
         'query' => 'acceptedNameUsageID_s:' . $wfo_root_id,
-        'filter' => 'snapshot_version_s:' . $taxon->snapshot_version_s,
+        'filter' => 'snapshot_version_s:' . $taxon_solr->snapshot_version_s,
         'limit' => 1000000,
         'sort' => 'id asc'
     );
     $response = json_decode(solr_run_search($query));
-    $taxon->synonyms = array();
+
     if($response->response->numFound > 0){
         foreach ($response->response->docs as $syn){
-            $syn->uri = get_uri($syn->id);
-            $taxon->synonyms[] = $syn;
+//            $syn_uri = get_uri($syn->taxonID_s);
+            $taxon_rdf->add('dwc:hasSynonym',  getTaxonNameResource($graph, $syn->taxonID_s) );
         }   
     }
 
-    header('Content-Type: application/json');
-    echo json_encode($taxon);
-    exit;
+    output($graph, $format);
     //print_r($taxon);
+}
+
+function output($graph, $format_string){
+
+    $format = \EasyRdf\Format::getFormat($format_string);
+
+    $serialiserClass  = $format->getSerialiserClass();
+    $serialiser = new $serialiserClass();
+    
+    // if we are using GraphViz then we add some parameters 
+    // to make the images nicer
+    if(preg_match('/GraphViz/', $serialiserClass)){
+        $serialiser->setAttribute('rankdir', 'LR');
+    }
+    
+    $data = $serialiser->serialise($graph, $format_string);
+
+//    $data = $graph->serialise($format);
+    
+    header('Content-Type: ' . $format->getDefaultMimeType());
+
+    print_r($data);
+
+//    echo $data;
+    exit;
 
 }
 
+function getTaxonNameResource($graph, $wfo_root_id){
+
+    $name = $graph->resource(get_uri($wfo_root_id), 'wfo:TaxonName');
+
+    // get the different versions of this taxon
+    $query = array(
+        'query' => 'taxonID_s:' . $wfo_root_id,
+        'sort' => 'snapshot_version_s asc'
+    );
+    $response = json_decode(solr_run_search($query));
+
+
+    // FROM HERE - build nomenclatural data from all the records, latest overriding older 
+    // data - to handle them dropping info between TENs sources
+
+    $nom_fields = array(
+        'taxonRank_s' => 'wfo:rank',
+        'scientificName_s' => 'wfo:fullName',
+        'scientificNameAuthorship_s' => 'wfo:authorship',
+        'family_s' => 'wfo:familyName',
+        'genus_s' => 'wfo:genusName',
+        'specificEpithet_s' => 'wfo:specificEpithet',
+        'namePublishedIn_s' => 'wfo:publicationCitation',
+        'namePublishedInID_s' => 'wfo:publicationID',
+        'scientificNameID_s' => 'wfo:nameID',
+        'originalNameUsageID_s' => 'wfo:hasBasionym'
+    );
+
+    $nom_values = array();
+
+    $usages = array();
+
+    $latest_usage = null;
+    foreach ($response->response->docs as $usage) {
+        
+        foreach($nom_fields as $solr_field => $rdf_prop){
+            if(isset($usage->{$solr_field})){
+                $nom_values[$rdf_prop] = $usage->{$solr_field};
+            }
+        }
+
+        $usages[] = $usage; 
+        $latest_usage = $usage;
+
+    }
+
+    foreach($nom_values as $rdf_prop => $value){
+
+        if($rdf_prop == 'wfo:hasBasionym'){
+            $name->add($rdf_prop, $graph->resource(get_uri($value)));
+        }elseif($rdf_prop == 'wfo:rank'){
+            $rank_name = strtolower($value);
+            $name->add($rdf_prop, $graph->resource('wfo:' . $rank_name));
+        }else{
+            $name->set($rdf_prop, $value);
+        }
+
+        
+    }
+
+    foreach($usages as $usage){
+
+        // a useage is in a taxon, either as
+        if($usage->taxonomicStatus_s == 'Synonym'){
+            $name->add('wfo:isSynonymOf', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+        }else{
+            $name->add('wfo:acceptedNameFor', $graph->resource(get_uri($usage->id)));
+        }
+
+        
+    }
+    
+    // if the most recent usage is accepted we add a link to it as the accepted
+    // taxon - breaks pure nomenclator
+    if($latest_usage->taxonomicStatus_s == 'Accepted'){
+        $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
+    }
+
+    return $name;
+
+}
+
+function get_format($path_parts){
+        
+    $format_string = null;
+    $formats = \EasyRdf\Format::getFormats();
+
+    // if we don't have any format in URL
+    if(count($path_parts) < 2 || strlen($path_parts[1]) < 1){
+
+        // try and get it from the http header
+        $headers = getallheaders();
+        if(isset($headers['Accept'])){
+            $mimes = explode(',', $headers['Accept']);
+       
+            foreach($mimes as $mime){
+                foreach($formats as $format){
+                    $accepted_mimes = $format->getMimeTypes();
+                    foreach($accepted_mimes as $a_mime => $weight){
+                        if($a_mime == $mime){
+                            $format_string = $format->getName();
+                            break;
+                        }
+                    }
+                    if($format_string) break;
+                }
+                if($format_string) break;
+            }
+        }
+
+        // if we can't get it from accept header then use default
+        if(!$format_string){
+            $format_string = 'rdfxml';
+        }
+
+        // redirect them
+        // if the format is missing we redirect to the default format
+        // always 303 redirect from the core object URIs
+        $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
+            . "://$_SERVER[HTTP_HOST]/"
+            . $path_parts[0]
+            . '/'
+            . $format_string;
+
+            header("Location: $redirect_url",TRUE,303);
+            echo "Found: Redirecting to data";
+            exit;
+
+
+    }else{
+
+        // we have a format in the url string
+        if(in_array($path_parts[1], $formats)){
+            $format_string = $path_parts[1];
+        }else{
+            header("HTTP/1.0 400 Bad Request");
+            echo "Unrecognised data format \"{$path_parts[1]}\"";
+            exit;
+        }
+
+    }
+
+    return $format_string;
+    
+}
 
 function get_uri($taxon_id){
     return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/" . $taxon_id;
