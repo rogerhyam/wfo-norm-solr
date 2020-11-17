@@ -30,7 +30,10 @@ $ns_uri = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "h
 \EasyRdf\Format::unregister('sparql-json');
 
 
-
+// used all over to generate guids
+function get_uri($taxon_id){
+    return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/" . $taxon_id;
+}
 
 
 

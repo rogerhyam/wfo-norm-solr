@@ -1,6 +1,7 @@
 {
     "require": {
         "easyrdf/easyrdf": "*",
-        "ml/json-ld": "*"
+        "ml/json-ld": "*",
+        "webonyx/graphql-php": "^14.3"
     }
 }
