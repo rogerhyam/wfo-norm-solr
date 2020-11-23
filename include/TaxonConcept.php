@@ -1,7 +1,8 @@
 <?php
 
+require_once('config.php');
 require_once('include/TaxonName.php');
-require_once('solr_functions.php');
+require_once('include/solr_functions.php');
 require_once('include/functions.php');
 
 class TaxonConcept{
@@ -146,6 +147,44 @@ class TaxonConcept{
         return $this->synonyms;
     }
 
+    public static function getTaxonConceptSuggestion( $terms ){
+
+
+        $parts = explode(' ', trim($terms));
+        $parts = array_map(function($pat) { return trim($pat) . '*' ; }, $parts);
+        $q = implode('', $parts);
+        
+        // build a query
+        $query = array(
+            'query' => "scientificName_s:$q",
+            'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
+            'limit' => 30
+        );
+        
+        $response = json_decode(solr_run_search($query));
+
+        $taxa = array();
+
+        if(isset($response->response->docs)){
+            for ($i=0; $i < count($response->response->docs); $i++) { 
+            
+                $doc = $response->response->docs[$i];
+        
+                // if it is a synonym we replace it with the accepted taxon
+                if($doc->taxonomicStatus_s == 'Synonym'){
+                    $syn = $doc;
+                    $accepted = solr_get_doc_by_id($doc->acceptedNameUsageID_s . '-' . $doc->snapshot_version_s);
+                    $taxa[$accepted->id] = TaxonConcept::getById($accepted->id);
+                }else{
+                    $taxa[$doc->id] = TaxonConcept::getById($doc->id);        
+                }
+        
+            }
+        }
+
+        return array_values($taxa);
+
+    }
 
 
     

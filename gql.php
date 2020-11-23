@@ -7,7 +7,7 @@ use GraphQL\Type\Schema;
 use GraphQL\Error\DebugFlag;
 
 require_once('include/TypeRegister.php');
-require_once('solr_functions.php');
+require_once('include/solr_functions.php');
 require_once('include/TaxonConcept.php');
 
 
@@ -51,6 +51,24 @@ $schema = new Schema([
                 ],
                 'resolve' => function($rootValue, $args, $context, $info) {
                     return TaxonName::getById( $args['nameId'] );
+                }
+            ],
+            'taxonConceptSuggestion' => [
+                'type' => Type::listOf(TypeRegister::taxonConceptType()),
+                'description' => 'Suggests a taxon from the preferred (most recent) taxonomy when given a partial name string.
+                    Designed to be useful in providing suggestions when identifying specimens.',
+                'args' => [
+                    'termsString' => [
+                        'type' => Type::string(),
+                        'description' => 'String representing all or part of a taxon name.
+                        Search is case sensitive to differentiate genera from epithets.
+                        An effective search strategy is to just type the first four letters of a 
+                        genus and species name, capitalising the genus.
+                        '
+                    ]
+                ],
+                'resolve' => function($rootValue, $args, $context, $info) {
+                    return  TaxonConcept::getTaxonConceptSuggestion( $args['termsString']  );
                 }
             ]
         ]
