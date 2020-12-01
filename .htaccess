@@ -4,6 +4,5 @@
 
 RewriteEngine on
 RewriteCond %{REQUEST_URI} !^/index.php$
-RewriteCond %{REQUEST_URI} !^/suggest.php
 RewriteCond %{REQUEST_URI} !^/gql.php
 RewriteRule ^(.+)$ /index.php?url=$1 [NC,L]

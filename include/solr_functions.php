@@ -1,5 +1,7 @@
 <?php
 
+require_once('include/curl_functions.php');
+
 // common functions for calling the SOLR service
 
 function solr_add_docs($docs){

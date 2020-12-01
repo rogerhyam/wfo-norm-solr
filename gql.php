@@ -1,4 +1,5 @@
 <?php
+require_once('config.php');
 
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\Type;
