@@ -6,8 +6,9 @@
 function get_curl_handle($uri){
     $ch = curl_init($uri);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'HerbariaMundi.org');
+    curl_setopt($ch, CURLOPT_USERAGENT, 'WFO Plant List');
     curl_setopt($ch, CURLOPT_HEADER, 1);
+    curl_setopt($ch, CURLOPT_USERPWD, SOLR_USER . ":" . SOLR_PASSWORD);
     return $ch;
 }
 
