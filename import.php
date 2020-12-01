@@ -1,8 +1,8 @@
 <?php
 
 require_once('config.php');
-require_once('curl_functions.php');
-require_once('solr_functions.php');
+require_once('include/curl_functions.php');
+require_once('include/solr_functions.php');
 
 /* useful curl commands to clean things up
 

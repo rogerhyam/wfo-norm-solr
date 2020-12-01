@@ -23,8 +23,11 @@ define('SOLR_PASSWORD', $solr_password); // from wfo_secrets.php
 \EasyRdf\RdfNamespace::set('dwc', 'http://rs.tdwg.org/dwc/terms/');
 
 // the namespace we use for the terms is local to the distro
-$ns_uri = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/terms/";
-\EasyRdf\RdfNamespace::set('wfo', $ns_uri);
+// only appropriate when we are not called from cli
+if(php_sapi_name() !== 'cli'){
+    $ns_uri = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/terms/";
+    \EasyRdf\RdfNamespace::set('wfo', $ns_uri);
+}
 
 // unregister a few formats we don't have serialisers for
 \EasyRdf\Format::unregister('rdfa');
