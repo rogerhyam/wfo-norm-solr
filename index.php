@@ -43,7 +43,7 @@ if(preg_match('/^wfo-[0-9]{10}$/', $path_parts[0])){
     exit;
 }else{
     header("HTTP/1.0 400 Bad Request");
-    echo "Unrecognised WFO id format: \"{$path_parts[0]}\"";
+    echo "Unrecognised WFO ID format: \"{$path_parts[0]}\"";
     exit;
 }
 
@@ -269,6 +269,8 @@ function get_format($path_parts){
     // if we don't have any format in URL
     if(count($path_parts) < 2 || strlen($path_parts[1]) < 1){
 
+        // if the format isn't in the path then they will be redirected somewhere
+
         // try and get it from the http header
         $headers = getallheaders();
         if(isset($headers['Accept'])){
@@ -289,23 +291,23 @@ function get_format($path_parts){
             }
         }
 
-        // if we can't get it from accept header then use default
         if(!$format_string){
-            $format_string = 'rdfxml';
-        }
-
-        // redirect them
-        // if the format is missing we redirect to the default format
-        // always 303 redirect from the core object URIs
-        $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
+            // not got a format string so assume HUMAN and send to main website
+            $redirect_url = "http://www.worldfloraonline.org/taxon/" . substr($path_parts[0], 0, 14);       
+        }else{
+            // got a format string so send them to that format
+            $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
             . "://$_SERVER[HTTP_HOST]/"
             . $path_parts[0]
             . '/'
             . $format_string;
+        }
 
-            header("Location: $redirect_url",TRUE,303);
-            echo "Found: Redirecting to data";
-            exit;
+        // redirect them
+        // always 303 redirect from the core object URIs
+        header("Location: $redirect_url",TRUE,303);
+        echo "Found: Redirecting to data";
+        exit;
 
 
     }else{

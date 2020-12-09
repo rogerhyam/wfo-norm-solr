@@ -58,7 +58,7 @@ $formats = \EasyRdf\Format::getFormats();
 
 <p>
     There are two ways to interact with the data: through semantic web compatible URIs or via the GraphQL query language. Both approaches use the same basic 
-    data model. Objects are properties are defined by URIs in the Semantic Web inteface.
+    data model. Objects are properties are defined by URIs in the Semantic Web interface and in the GraphQL documentation.
 </p>
 
 <p  class="alert" >
@@ -77,7 +77,7 @@ $formats = \EasyRdf\Format::getFormats();
 </p>
 <p>
     In order to represent multiple classifications in a single dataset it is necessary to adopt the TaxonConcept model which differentiates between taxa (TaxonConcepts)
-    which vary between classifactions and names (TaxonNames) which do not but which may play different roles in different classifications.
+    which vary between classifications and names (TaxonNames) which do not, but which may play different roles in different classifications.
 </p>
 <p class="aside">
     <strong>Taxon name/concept background: </strong>
@@ -100,7 +100,7 @@ These identifiers are also used in the GraphQL accessible data. They are intende
 </p>
 <p>
 <strong>TaxonNames</strong> identifiers take the form <a href="<?php echo get_uri('wfo-0001048237') ?>" ><?php echo get_uri('wfo-0001048237') ?></a>. The final part of the URI is the same as the identifier 
-used in the live web pages for the current version of the WFO. There is a one to one relationship between names, as created under the International Code for Botanical Nomenclature
+used in the live web pages for the current version of the WFO. There is a one to one relationship between names, as created under the International Code for Botanical Nomenclature,
 and these identifiers.
 </p>
 
@@ -110,8 +110,8 @@ qualified by a classification version. The version format is the year followed b
 </p>
 
 <p>
-Note that although the format of identifiers is described here (because it is useful for understanding and debugging) you should not construct them programatically
-but treat them as opaque strings. An example of how this can go wrong is that not every name has an associated taxon in every classfication.
+Note that although the format of identifiers is described here (because it is useful for understanding and debugging) you should not construct them programmatically
+but treat them as opaque strings. An example of how this can go wrong is that not every name has an associated taxon in every classification.
 If a TaxonName's role within a classification is as a synonym there is no associated taxon in that classification.
 The name <a href="<?php echo get_uri('wfo-0000615907') ?>" ><?php echo get_uri('wfo-0000615907') ?></a> (<i>Comandra elliptica</i> Raf.)
 Is a synonym in the classification 2019-05. If you were to create the taxon URI 
@@ -122,7 +122,7 @@ Dereferencing the name identifier would have provided a list of its usages in di
 </p>
 <h3>Properties</h3>
 <p>
-The diagram below shows the property relationships in the data model. Further documentation on these can be found either by deferencing the URIs of the terms in the RDF responses 
+The diagram below shows the property relationships in the data model. Further documentation on these can be found either by dereferencing the URIs of the terms in the RDF responses 
 or by looking at the GraphQL documentation using an IDE. The second way might be useful even if you intend to only use the Semantic Web API.
 </p>
 
@@ -133,26 +133,44 @@ or by looking at the GraphQL documentation using an IDE. The second way might be
 
 <h2>GraphQL Interface</h2>
 
-<p>There is also a GraphQL Interface to the data .... </p>
+<p>The <a href="https://graphql.org/">GraphQL</a> endpoint is <a href="https://wfo-list.rbge.info/gql">https://wfo-list.rbge.info/gql</a>.</p>
 
+<p>
+    There are many resources on the web about use of GraphQL. It enables self documenting APIs and all the objects and properties available here have been documented. 
+    The use of a GraphQL client or IDE are recommended e.g. the GraphiQL plugin for Google Chrome.
+</p>
 
 <h2>Semantic Web Resources</h2>
 
+<p>The URI identifiers for TaxonConcepts and TaxonNames follow Semantic Web best practice in implementing content negotiation.</p>
+
+<p>
+    Calling a URI will always result in an HTTP 303 "See Other" redirect to an appropriately formatted source of data about that resource.
+    Where the client is sent depends on the content of the Accept header in the request.
+    When data of a recognized mimetype isn't contained within the header or when an HTML mimetype is found 
+    the client will be redirected to an appropriate page within the WFO website. This is to ensure human users are always sent to something
+    appropriate and not confused by the data services offered here.
+</p>
+
+<p>
+    If a recognized mimetype is found then the client is redirect to a data resource of that mimetype.
+    By convention the URI of that data resource will be the original URI with a slash followed by the name of the data type appended.
+    This behaviour makes developing and debugging easy but should not be relied upon in code as it may change in the future.
+    Production systems should always resolve the identifier URI and follow the supplied redirect.
+</p>
+
 <h3>Supported formats</h3>
 
-<p>Data can be returned in the <?php echo count($formats) ?> formats listed in the table below. </p>
-<p>If a request does not include the format as the last part of the URI then the following will occur.
-The Accepts HTTP header of the request will be examined for a recognised mime type string.
-If one is found then a 303 redirect will be issued to a URL for a resource in that format.
-If no format is found then the user will be assumed to be a human not a machine and will be redirected 
-to the web page for that taxon on the main WFO site.</p>
+<p>
+    Data can be returned in the <?php echo count($formats) ?> formats listed in the table below.
+    These include graphical representations of the data.
+</p>
 <table>
 <tr>
     <th>Name</th>
     <th>Recommended Mime Type</th>
-    <th>Recognised Mime Types</th>
+    <th>Recognized Mime Types</th>
     <th>Example</th>
-
 </tr>
 <?php
 
@@ -163,13 +181,16 @@ foreach($formats as $format_name => $format){
     echo "<td>" . implode( ', ', array_keys($format->getMimeTypes()) ) . "</td>";
     echo "<td><a href=\"/wfo-4000000718/$format_name\">/wfo-4000000718/$format_name</a></td>"; 
     echo "</tr>";
-
 }
 
 ?>
 </table>
 
+<p>An example graph for a TaxonConcept</p>
+<a href="/wfo-4000000718-2019-05/svg"><img src="/wfo-4000000718-2019-05/svg" style="width: 100%"/></a>
 
+<p>An example graph for a TaxonName</p>
+<a href="/wfo-4000000718/svg"><img src="/wfo-4000000718/svg" style="width: 100%"/></a>
 
 
 </div>
