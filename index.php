@@ -1,12 +1,17 @@
 <?php
 
+// for dev environment we do the job of .htaccess 
+if(preg_match('/^\/gql.php/', $_SERVER["REQUEST_URI"])) return false;
+if(preg_match('/^\/gql/', $_SERVER["REQUEST_URI"])){
+    include('gql.php');
+    exit;
+};
+
 require_once('config.php');
 require_once('include/curl_functions.php');
 require_once('include/solr_functions.php');
 require_once('include/functions.php');
 
-// for dev environment we do the job of .htaccess 
-if(preg_match('/^\/gql.php/', $_SERVER["REQUEST_URI"])) return false;
 
 // path should be of the form /wfo-id/format or /terms/
 $path_parts = explode('/', $_SERVER["REQUEST_URI"]);
