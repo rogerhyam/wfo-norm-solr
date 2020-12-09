@@ -58,7 +58,7 @@ $formats = \EasyRdf\Format::getFormats();
 
 <p>
     There are two ways to interact with the data: through semantic web compatible URIs or via the GraphQL query language. Both approaches use the same basic 
-    data model. Objects are properties are defined by URIs in the Semantic Web interface and in the GraphQL documentation.
+typ    data model. Objects and properties are defined by URIs in the Semantic Web interface and in the GraphQL documentation.
 </p>
 
 <p  class="alert" >
