@@ -114,10 +114,14 @@ Note that although the format of identifiers is described here (because it is us
 but treat them as opaque strings. An example of how this can go wrong is that not every name has an associated taxon in every classification.
 If a TaxonName's role within a classification is as a synonym there is no associated taxon in that classification.
 The name <a href="<?php echo get_uri('wfo-0000615907') ?>" ><?php echo get_uri('wfo-0000615907') ?></a> (<i>Comandra elliptica</i> Raf.)
-Is a synonym in the classification 2019-05. If you were to create the taxon URI 
+Is a synonym in the classification 2019-05.
+If you were to create the taxon URI 
 <a style="color: red" href="<?php echo get_uri('wfo-0000615907-2019-05') ?>" ><?php echo get_uri('wfo-0000615907-2019-05') ?></a> by tagging the version id on the end
-you would currently be redirect to the taxon <a href="<?php echo get_uri('wfo-0001048237-2019-05') ?>" ><?php echo get_uri('wfo-0001048237-2019-05') ?></a>
-in which <i>Comandra elliptica</i> Raf. is a synonym. This behaviour is technically wrong and may change to returning a HTTP 400 Bad Request or something else in future.
+and try to retrieve data you would currently be redirect to the taxon 
+<a href="<?php echo get_uri('wfo-0000615918-2019-05') ?>" ><?php echo get_uri('wfo-0000615918-2019-05') ?></a> (<i>Comandra umbellata</i> (L.) Nutt.)
+in which <i>Comandra elliptica</i> Raf. is a synonym.
+This behaviour is technically wrong and may change to returning a HTTP 400 Bad Request or something else in future.
+If you were to use the created URI in a web browser you would be redirected to the synonyms page in the website.
 Dereferencing the name identifier would have provided a list of its usages in different classifications and is the correct approach.
 </p>
 <h3>Properties</h3>
@@ -125,7 +129,6 @@ Dereferencing the name identifier would have provided a list of its usages in di
 The diagram below shows the property relationships in the data model. Further documentation on these can be found either by dereferencing the URIs of the terms in the RDF responses 
 or by looking at the GraphQL documentation using an IDE. The second way might be useful even if you intend to only use the Semantic Web API.
 </p>
-
 
 <p></p>
 
