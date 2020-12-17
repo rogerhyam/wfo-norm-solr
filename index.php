@@ -243,7 +243,9 @@ function getTaxonNameResource($graph, $wfo_root_id){
 
         // a useage is in a taxon, either as
         if($usage->taxonomicStatus_s == 'Synonym'){
-            $name->add('wfo:isSynonymOf', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+            if(isset($usage->acceptedNameUsageID_s)){
+                $name->add('wfo:isSynonymOf', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+            }
         }else{
             $name->add('wfo:acceptedNameFor', $graph->resource(get_uri($usage->id)));
         }
