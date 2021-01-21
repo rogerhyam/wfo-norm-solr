@@ -145,7 +145,7 @@ if(!$version_id){
     if($response->response->numFound > 0){
         foreach ($response->response->docs as $syn){
 //            $syn_uri = get_uri($syn->taxonID_s);
-            $taxon_rdf->add('dwc:hasSynonym',  getTaxonNameResource($graph, $syn->taxonID_s) );
+            $taxon_rdf->add('wfo:hasSynonym',  getTaxonNameResource($graph, $syn->taxonID_s) );
         }   
     }
 

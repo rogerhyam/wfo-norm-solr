@@ -20,7 +20,7 @@ define('SOLR_USER', $solr_user); // from wfo_secrets.php
 define('SOLR_PASSWORD', $solr_password); // from wfo_secrets.php
 
 // add namespaces to easyrdf
-\EasyRdf\RdfNamespace::set('dwc', 'http://rs.tdwg.org/dwc/terms/');
+// \EasyRdf\RdfNamespace::set('dwc', 'http://rs.tdwg.org/dwc/terms/');
 
 // the namespace we use for the terms is local to the distro
 // only appropriate when we are not called from cli
