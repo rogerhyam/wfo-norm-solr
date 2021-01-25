@@ -136,7 +136,7 @@ or by looking at the GraphQL documentation using an IDE. The second way might be
 
 <h2>GraphQL Interface</h2>
 
-<p>The <a href="https://graphql.org/">GraphQL</a> endpoint is <a href="https://wfo-list.rbge.info/gql">https://wfo-list.rbge.info/gql</a>.</p>
+<p>The <a href="https://graphql.org/">GraphQL</a> endpoint is <a href="<?php echo get_uri('gql') ?>"><?php echo get_uri('gql') ?></a>.</p>
 
 <p>
     There are many resources on the web about use of GraphQL. It enables self documenting APIs and all the objects and properties available here have been documented. 

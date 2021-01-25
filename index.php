@@ -12,7 +12,6 @@ require_once('include/curl_functions.php');
 require_once('include/solr_functions.php');
 require_once('include/functions.php');
 
-
 // path should be of the form /wfo-id/format or /terms/
 $path_parts = explode('/', $_SERVER["REQUEST_URI"]);
 array_shift($path_parts); // lose the first blank one
@@ -96,8 +95,6 @@ if(!$version_id){
         $taxon_rdf->set('wfo:editorialStatus', $taxon_solr->taxonomicStatus_s);
     }
 
-
-    
     // Insert the name
     $taxon_rdf->add('wfo:hasName', getTaxonNameResource($graph, $wfo_root_id));
 
