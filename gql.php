@@ -78,6 +78,13 @@ $schema = new Schema([
             ]);
 
 $rawInput = file_get_contents('php://input');
+
+if(!trim($rawInput)){
+    echo "<h1>WFO Plant List GraphQL Endpoint</h1>";
+    echo "<p>You don't seem to have given us a query to work with. Please use a GraphQL client to pass query info.</p>";
+    exit;
+}
+
 $input = json_decode($rawInput, true);
 $query = $input['query'];
 $variableValues = isset($input['variables']) ? $input['variables'] : null;

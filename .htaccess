@@ -2,7 +2,8 @@
     Header always set Access-Control-Allow-Origin "*"
 </IfModule>
 
+# turn off multiviews in the virtual host or /terms won't work
+
 RewriteEngine on
 RewriteCond %{REQUEST_URI} !^/index.php$
-# RewriteCond %{REQUEST_URI} !^/gql.php
 RewriteRule ^(.+)$ /index.php?url=$1 [NC,L]
