@@ -16,9 +16,21 @@ class TaxonConceptType extends ObjectType
                 TaxonConcepts also have set type relationships to other TaxonConcepts in the classification hierarchy and version type relationships with TaxonConcepts in other classifications.",
             'fields' => function() {
                 return [
+                    'id' => [
+                        'type' => Type::string(),
+                        'description' => "A locally unique identifier for the taxon in the form of a qualified WFO ID "
+                    ],
+                    'title' => [
+                        'type' => Type::string(),
+                        'description' => "A basic human readable representation of the TaxonConcept probably just good for development."
+                    ],
                     'guid' => [
                         'type' => Type::string(),
                         'description' => "A globally unique identifier in the form of a URI that will resolve to data about it"
+                    ],
+                    'classification' => [
+                        'type' => TypeRegister::classificationType(),
+                        'description' => "The classification this TaxonConcept belongs to"
                     ],
                     'web' => [
                         'type' => Type::string(),
@@ -46,14 +58,38 @@ class TaxonConceptType extends ObjectType
                         This includes homotypic (nomenclatural) synonyms which share the same type specimen as the accepted name 
                         and heterotypic (taxonomic) synonyms whose type specimens are considered to fall within the circumscription of this taxon."
                     ],
-                    // FIXME: This should be parameterised to enable pagination of large taxa
                     'hasPart' => [
                         'type' => Type::listOf(TypeRegister::taxonConceptType()),
-                        'resolve' => function($taxon){
+                        'resolve' => function($taxon, $args, $context, $info){
                             // we load the name if we need to!
-                            return $taxon->getHasPart();
+
+                            $limit = -1;
+                            if(isset($args['limit'])) $limit = $args['limit'];
+
+                            $offset = 0;
+                            if(isset($args['offset'])) $offset = $args['offset'];
+
+                            return $taxon->getHasPart($limit, $offset);
+
                         },
+                        'args' => [
+                            'offset' => [
+                                'type' => Type::int(),
+                                'description' => 'How far through the result set to start.'
+                            ],
+                            'limit' => [
+                                'type' => Type::int(),
+                                'description' => 'Maximum number of results to return'
+                            ]
+                        ],
                         'description' => "A sub taxon of the current taxon within this classification"
+                    ],
+                    'partsCount' => [
+                        'type' => Type::int(),
+                        'description' => "The number of subtaxa (parts) of this taxon.",
+                        'resolve' => function($taxon){
+                            return $taxon->getPartsCount();
+                        },
                     ],
                     'isPartOf' => [
                         'type' => TypeRegister::taxonConceptType(),
@@ -62,6 +98,15 @@ class TaxonConceptType extends ObjectType
                             return $taxon->getIsPartOf();
                         },
                         'description' => "The parent taxon of the current taxon within this classification"
+                    ],
+                    'path' => [
+                        'type' => Type::listOf(TypeRegister::taxonConceptType()),
+                        'resolve' => function($taxon){
+                            $path = array();
+                            $path = array_reverse($taxon->getPath($path));
+                            return $path;
+                        },
+                        'description' => "The path of inclusion from the root taxon to this taxon. Good for bread crumb trails."
                     ],
                     'replaces' => [
                         'type' => TypeRegister::taxonConceptType(),
@@ -81,7 +126,7 @@ class TaxonConceptType extends ObjectType
                             If the accepted name of the current taxon has become a synonym of another taxon in the new classification
                             (i.e. it has been sunk) then this taxon is replaced by the accepted taxon in the new classification.
                             This does not necessarily mean that all specimens and observations associated with this taxon can be automatically assigned 
-                            to the taxon in the new classification under a new name. Synonising a name is a nomenclatural act signifying the movement of 
+                            to the taxon in the new classification under a new name. Synonomizing a name is a nomenclatural act signifying the movement of 
                             a single type specimen. The original TaxonConcept may be contained in the new TaxonConcept, be split up or renamed.
                             See also the source attribute. 
                         "

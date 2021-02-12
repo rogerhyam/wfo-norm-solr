@@ -2,12 +2,14 @@
 
 require_once('config.php');
 require_once('include/TaxonName.php');
+require_once('include/Classification.php');
 require_once('include/solr_functions.php');
 require_once('include/functions.php');
 
 class TaxonConcept{
 
-    protected string $id;
+    public string $id;
+    public string $title;
 
     protected static $loaded = array();
     private ?TaxonName $hasName;
@@ -20,14 +22,17 @@ class TaxonConcept{
     public string $editorialStatus;
     public string $guid;
     public string $web;
-
+    public Classification $classification;
+    public int $partsCount = -1; 
 
     public function __construct($solr_doc){
 
         // add self to the list of created docs
         $this->id = $solr_doc->id;
+        $this->title = "TaxonConcept: " . $solr_doc->id . " " . $solr_doc->scientificName_s;
         $this->guid = get_uri($this->id);
         $this->web = 'http://www.worldfloraonline.org/taxon/' . substr($this->id, 0, 14);
+        $this->classification = Classification::getById($solr_doc->snapshot_version_s);
         $this->solr_doc = $solr_doc;
 
         self::$loaded[$this->id] = $this;
@@ -61,32 +66,54 @@ class TaxonConcept{
 
         $solr_doc = solr_get_doc_by_id($taxon_id);
         
+        if(!$solr_doc) return null;
+
         return new TaxonConcept($solr_doc);
 
     }
 
-    public function getHasPart(){
+    public function getPartsCount(){
 
-        if($this->hasPart === null){
+        if($this->partsCount !== -1) return $this->partsCount;
 
-            $this->hasPart = array();
+        $query = array(
+            'query' => 'parentNameUsageID_s:' . substr($this->id, 0, 14),
+            'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
+            'fields' => 'id',
+            'limit' => 0,
+            'offset' => 0,
+        );
+        $response = json_decode(solr_run_search($query));
 
-             // add child taxa
-            $query = array(
-                'query' => 'parentNameUsageID_s:' . substr($this->id, 0, 14),
-                'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
-                'fields' => 'id',
-                'limit' => 1000000,
-                'sort' => 'id asc'
-            );
-            $response = json_decode(solr_run_search($query));
-            if($response->response->numFound > 0){
-                foreach ($response->response->docs as $kid) {
-                    $this->hasPart[] = TaxonConcept::getById($kid->id);
-                }
+        if(isset($response->response->numFound)){
+            $this->partsCount = $response->response->numFound;
+        }
+
+        return $this->partsCount;
+    
+    }
+
+    public function getHasPart($limit, $offset){
+
+        $this->hasPart = array();
+
+        $query = array(
+            'query' => 'parentNameUsageID_s:' . substr($this->id, 0, 14),
+            'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
+            'fields' => 'id',
+            'limit' => $limit,
+            'offset' => $offset,
+            'sort' => 'id asc' // fixme - scientific name sort?
+        );
+        $response = json_decode(solr_run_search($query));
+        if($response->response->numFound > 0){
+            foreach ($response->response->docs as $kid) {
+                $this->hasPart[] = TaxonConcept::getById($kid->id);
             }
         }
+
         return $this->hasPart;
+        
     }
 
     public function getIsPartOf(){
@@ -103,6 +130,17 @@ class TaxonConcept{
         return $this->isPartOf;
 
     }
+
+    public function getPath(&$path){
+        // add ourself
+        $path[] = $this;
+        $parent = $this->getIsPartOf();
+        if($parent !== null){
+            $parent->getPath($path);
+        }
+        return $path;
+    }
+
 
     public function getReplacementRelation($relation_type){
 

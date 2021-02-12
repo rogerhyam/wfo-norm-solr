@@ -14,13 +14,16 @@ class TaxonNameType extends ObjectType
 
     public function __construct()
     {
-        error_log('TaxonNameType');
         $config = [
             'description' => "A TaxonName a string of characters used to name a taxon under as governed by the 
                 International Code of Botanical Nomenclature (ICBN) https://www.iapt-taxon.org/nomen/main.php.
                 TaxonNames may appear as the single correct name for a taxon or as one of the synonyms for that taxon.",
             'fields' => function(){
                 return [
+                    'id' => [
+                        'type' => Type::string(),
+                        'description' => "A locally identifier for this Name (actually the WFO ID)"
+                    ],
                     'guid' => [
                         'type' => Type::string(),
                         'description' => "A globally unique identifier in the form of a URI that will resolve to data about it"
@@ -32,6 +35,10 @@ class TaxonNameType extends ObjectType
                     'name' => [
                         'type' => Type::string(),
                         'description' => 'Scientific name, with rank abbreviations for trinomials, but not with author citation.'
+                    ],
+                    'title' => [
+                        'type' => Type::string(),
+                        'description' => 'Needed by some GraphQL libraries this is a string rendering of he object probably only useful in development'
                     ],
                     'authorship' => [
                         'type' => Type::string(),

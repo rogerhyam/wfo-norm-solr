@@ -4,12 +4,13 @@ require_once('TaxonConcept.php');
 
 class TaxonName{
 
-    protected string $id;
+    public string $id;
     protected static $loaded = array();
 
     // simple strings that are returned as is
     public string $guid;
     public ?string $name;
+    public ?string $title;
     public ?string $authorship;
     public ?string $familyName;
     public ?string $genusName;
@@ -35,6 +36,7 @@ class TaxonName{
         // set those string fields
         $this->guid = get_uri($this->id);
         isset($name_data->scientificName_s) ? $this->name = $name_data->scientificName_s : $this->name = null;
+        $this->title = "TaxonName: " . $this->id . " " . $this->name; // some libraries need a title for every object.
         isset($name_data->scientificNameAuthorship_s) ? $this->authorship = $name_data->scientificNameAuthorship_s: $this->authorship = null;
         isset($name_data->family_s) ? $this->familyName = $name_data->family_s : $this->familyName = null;
         isset($name_data->genus_s) ? $this->genusName = $name_data->genus_s : $this->genusName = null;

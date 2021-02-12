@@ -10,6 +10,7 @@ use GraphQL\Error\DebugFlag;
 require_once('include/TypeRegister.php');
 require_once('include/solr_functions.php');
 require_once('include/TaxonConcept.php');
+require_once('include/Classification.php');
 
 
 $typeReg = new TypeRegister();
@@ -28,6 +29,23 @@ $schema = new Schema([
             polygons and each classification as a different version of the map.
             ",
         'fields' => [
+            'classifications' => [
+                'type' => Type::listOf(TypeRegister::classificationType()),
+                'args' => [
+                    'classificationId' => [
+                        'type' => Type::string(),
+                        'description' => "The ID of the classification to load.
+                            'DEFAULT' will return the default (most recent) classification.
+                            'ALL' will return all the classifications ordered by date desc",
+                        'required' => true
+                    ]
+                ],
+                'resolve' => function($rootValue, $args, $context, $info) {
+                    $b = Classification::getById( $args['classificationId'] );
+                    if(!is_array($b)) $b = array($b);
+                    return $b;
+                }
+            ],
             'taxonConceptById' => [
                 'type' => TypeRegister::taxonConceptType(),
                 'description' => 'Returns a TaxonConcept by its ID',
@@ -64,7 +82,7 @@ $schema = new Schema([
                         'description' => 'String representing all or part of a taxon name.
                         Search is case sensitive to differentiate genera from epithets.
                         An effective search strategy is to just type the first four letters of a 
-                        genus and species name, capitalising the genus.
+                        genus and species name, capitalizing the genus.
                         '
                     ]
                 ],
