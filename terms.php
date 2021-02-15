@@ -2,6 +2,16 @@
 
     $graph = new \EasyRdf\Graph();
 
+    $classificationClass = $graph->resource(\EasyRdf\RdfNamespace::get('wfo') . 'Classification', 'rdfs:Class');
+
+    $year = $graph->resource('wfo:year');
+    $classificationClass->add('rdfs:Property', $year);
+    $year->add('rdfs:range', $graph->resource('xsd:int'));
+
+    $month = $graph->resource('wfo:month');
+    $classificationClass->add('rdfs:Property', $month);
+    $month->add('rdfs:range', $graph->resource('xsd:int'));
+
 
     // - T A X O N - C O N C E P T -
 
@@ -28,6 +38,11 @@
     $hasSynonym = $graph->resource('wfo:hasSynonym');
     $taxon_concept->add('rdfs:Property', $hasSynonym);
     $hasSynonym->add('rdfs:range', $graph->resource('wfo:TaxonName'));
+
+    $classification = $graph->resource('wfo:classification');
+    $taxon_concept->add('rdfs:Property', $classification);
+    $classification->add('rdfs:range', $graph->resource('wfo:Classification'));
+
 
     // - T A X O N - N A M E -
 

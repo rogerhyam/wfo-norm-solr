@@ -22,6 +22,10 @@ if(strlen($path_parts[0]) == 0){
     exit;
 }
 
+//echo $_SERVER["REQUEST_URI"]; /
+//print_r($path_parts);
+//exit;
+
 $format = get_format($path_parts);
 
 // first argument is blank or the wfo-id.
@@ -36,28 +40,43 @@ if(preg_match('/^wfo-[0-9]{10}$/', $path_parts[0])){
     $wfo_qualified_id = $path_parts[0];
     $wfo_root_id = substr($wfo_qualified_id, 0, 14);
     $version_id = substr($wfo_qualified_id, -7);
+}else if(preg_match('/^[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
+    $wfo_qualified_id = null;
+    $wfo_root_id = null;
+    $version_id = $path_parts[0];
 }else if(preg_match('/^terms$/', $path_parts[0])){
     // they are looking for a term in the vocabulary
     include('terms.php');
     exit;
 }else{
     header("HTTP/1.0 400 Bad Request");
-    echo "Unrecognised WFO ID format: \"{$path_parts[0]}\"";
+    echo "Unrecognized WFO ID format: \"{$path_parts[0]}\"";
     exit;
 }
 
 
 // now we have enough to make decisions about where to send people
 
-// if there is no version then it is a name and we present 
-// the useages to be chosen between.
-if(!$version_id){
+if($version_id && !$wfo_root_id && !$wfo_qualified_id){
 
+    // we only have a version id so we are presenting a
+    // classification object
+    $graph = new \EasyRdf\Graph();
+    $classification = $graph->resource(get_uri($version_id), 'wfo:Classification');
+    $parts = explode('-', $version_id);
+    $classification->set('wfo:month', $parts[0]);
+    $classification->set('wfo:year', $parts[1]);
+    output($graph, $format);
+
+}else if(!$version_id && $wfo_root_id && !$wfo_qualified_id){
+
+    // we have a root taxon id but no version so we 
+    // are presenting just a name    
     $graph = new \EasyRdf\Graph();
     $name = getTaxonNameResource($graph, $wfo_root_id);
     output($graph, $format);
 
-}else{
+}else if($wfo_qualified_id){
 
     // we have a versioned taxon id so check it exists then render it
     $taxon_solr = solr_get_doc_by_id($wfo_qualified_id);
@@ -98,8 +117,10 @@ if(!$version_id){
     // Insert the name
     $taxon_rdf->add('wfo:hasName', getTaxonNameResource($graph, $wfo_root_id));
 
-    // Link out to other taxonomies
+    // link it to the classification
+    $taxon_rdf->add('wfo:classification', $graph->resource(get_uri($version_id)) );
 
+    // Link out to other taxonomies
     $replaces_replaced = get_replaces_replaced($wfo_root_id, $taxon_solr->snapshot_version_s);
     foreach($replaces_replaced as $property => $uri){
         $taxon_rdf->add($property, $graph->resource($uri));
@@ -148,6 +169,11 @@ if(!$version_id){
 
     output($graph, $format);
     //print_r($taxon);
+
+}else{
+    http_response_code(400);
+    echo "Error: invalid combination of values";
+    exit;
 }
 
 function output($graph, $format_string){
@@ -291,8 +317,18 @@ function get_format($path_parts){
         }
 
         if(!$format_string){
+            
             // not got a format string so assume HUMAN and send to main website
-            $redirect_url = "http://www.worldfloraonline.org/taxon/" . substr($path_parts[0], 0, 14);       
+
+            // there is an exception for when they are requesting a classification
+            // there is not human readable page for that so send them to the downloads page.
+            if(preg_match('/^[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
+                $redirect_url = "http://www.worldfloraonline.org/downloadData";
+            }else{
+                // otherwise send them to the taxon page
+                $redirect_url = "http://www.worldfloraonline.org/taxon/" . substr($path_parts[0], 0, 14);
+            }
+                   
         }else{
             // got a format string so send them to that format
             $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
