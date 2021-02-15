@@ -101,11 +101,17 @@ class TaxonConcept{
             'query' => 'parentNameUsageID_s:' . substr($this->id, 0, 14),
             'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
             'fields' => 'id',
-            'limit' => $limit,
             'offset' => $offset,
-            'sort' => 'id asc' // fixme - scientific name sort?
+            'sort' => 'scientificName_s asc'
         );
+
+        // -1 is unlimited but in Solr you just miss the parameter 
+        if($limit >= 0){
+            $query['limit'] = $limit;
+        }
+
         $response = json_decode(solr_run_search($query));
+        error_log(print_r($response, true));
         if($response->response->numFound > 0){
             foreach ($response->response->docs as $kid) {
                 $this->hasPart[] = TaxonConcept::getById($kid->id);
