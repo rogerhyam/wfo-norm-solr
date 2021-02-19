@@ -40,7 +40,7 @@ class TaxonName{
         
         isset($name_data->scientificNameAuthorship_s) ? $this->authorship = $name_data->scientificNameAuthorship_s: $this->authorship = null;
         
-        isset($name_data->scientificNameAuthorship_html_s) ? $this->authorshipHtml = $name_data->scientificNameAuthorship_html_s: $this->authorship = null;
+        isset($name_data->scientificNameAuthorship_html_s) ? $this->authorshipHtml = $name_data->scientificNameAuthorship_html_s: $this->authorshipHtml = null;
         
         isset($name_data->family_s) ? $this->familyName = $name_data->family_s : $this->familyName = null;
         isset($name_data->genus_s) ? $this->genusName = $name_data->genus_s : $this->genusName = null;
