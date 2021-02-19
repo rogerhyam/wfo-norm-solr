@@ -16,7 +16,7 @@ class ClassificationType extends ObjectType
                 return [
                     'id' => [
                         'type' => Type::string(),
-                        'description' => "A locally unique identifier for the taxon."
+                        'description' => "A locally unique identifier for the classification."
                     ],
                     'title' => [
                         'type' => Type::string(),

@@ -44,6 +44,10 @@ class TaxonNameType extends ObjectType
                         'type' => Type::string(),
                         'description' => 'Author citation of the names following IPNI standard author abbreviations'
                     ],
+                    'authorshipHtml' => [
+                        'type' => Type::string(),
+                        'description' => 'The same as the authorship property but authors are marked up in HTML with titles and links to their Wikidata entries'
+                    ],
                     'rank' => [
                         'type' => new EnumType([
                             'name' => 'Rank',

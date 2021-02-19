@@ -3,6 +3,7 @@
 require_once('config.php');
 require_once('include/curl_functions.php');
 require_once('include/solr_functions.php');
+require_once('include/AuthorTeam.php');
 
 /* useful curl commands to clean things up
 
@@ -69,7 +70,7 @@ if($file === FALSE){
 }
 
 // get the column titles
-// assume longest line is 2,000 chars (currenly longest is 480)
+// assume longest line is 2,000 chars (currently longest is 480)
 $fields = fgetcsv($file, 2000, "\t");
 echo "Total fields: " . number_format(count($fields)) . "\n";
 
@@ -120,6 +121,13 @@ while($row = fgetcsv($file, 2000, "\t")){
     if(isset($solr_doc['family_s']) && $solr_doc['family_s'] != $solr_doc['scientificName_s'] ) $full_name = $full_name . ' [' . $solr_doc['family_s'] .']';
     $solr_doc['full_name_s_lower'] = strip_tags($full_name);
     $solr_doc['full_name_s'] = $full_name;
+
+    // authors get special treatment
+    $authorTeamString = $row[array_search('scientificNameAuthorship', $fields)];
+    $authorTeam = new AuthorTeam($authorTeamString);
+    $solr_doc['scientificNameAuthorship_html_s'] = $authorTeam->getHtmlAuthors();
+    $solr_doc['scientificNameAuthorship_labels_ss'] = $authorTeam->getAuthorLabels();
+    $solr_doc['scientificNameAuthorship_ids_ss'] = $authorTeam->getAuthorIds();
 
     $solr_docs[] = $solr_doc;
 

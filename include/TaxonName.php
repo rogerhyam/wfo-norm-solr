@@ -37,7 +37,11 @@ class TaxonName{
         $this->guid = get_uri($this->id);
         isset($name_data->scientificName_s) ? $this->name = $name_data->scientificName_s : $this->name = null;
         $this->title = "TaxonName: " . $this->id . " " . $this->name; // some libraries need a title for every object.
+        
         isset($name_data->scientificNameAuthorship_s) ? $this->authorship = $name_data->scientificNameAuthorship_s: $this->authorship = null;
+        
+        isset($name_data->scientificNameAuthorship_html_s) ? $this->authorshipHtml = $name_data->scientificNameAuthorship_html_s: $this->authorship = null;
+        
         isset($name_data->family_s) ? $this->familyName = $name_data->family_s : $this->familyName = null;
         isset($name_data->genus_s) ? $this->genusName = $name_data->genus_s : $this->genusName = null;
         isset($name_data->specificEpithet_s) ? $this->specificEpithet = $name_data->specificEpithet_s : $this->specificEpithet = null;
@@ -49,6 +53,7 @@ class TaxonName{
 
         // and bool
         $this->currentPreferredUsageIsSynonym = $name_data->currentPreferredUsageIsSynonym;
+
 
     }
 

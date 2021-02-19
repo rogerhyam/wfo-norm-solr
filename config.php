@@ -36,6 +36,18 @@ if(php_sapi_name() !== 'cli'){
 \EasyRdf\Format::unregister('sparql-xml');
 \EasyRdf\Format::unregister('sparql-json');
 
+// create and initialize the database connection - defined in ../wfo_secrets.php
+$mysqli = new mysqli($db_host, $db_user, $db_password, $db_database);
+
+// connect to the database
+if ($mysqli->connect_error) {
+  echo $mysqli->connect_error;
+}
+
+if (!$mysqli->set_charset("utf8")) {
+  echo printf("Error loading character set utf8: %s\n", $mysqli->error);
+}
+
 
 // used all over to generate guids
 function get_uri($taxon_id){

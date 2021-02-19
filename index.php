@@ -213,7 +213,6 @@ function getTaxonNameResource($graph, $wfo_root_id){
     );
     $response = json_decode(solr_run_search($query));
 
-
     // FROM HERE - build nomenclatural data from all the records, latest overriding older 
     // data - to handle them dropping info between TENs sources
 
@@ -221,6 +220,7 @@ function getTaxonNameResource($graph, $wfo_root_id){
         'taxonRank_s' => 'wfo:rank',
         'scientificName_s' => 'wfo:fullName',
         'scientificNameAuthorship_s' => 'wfo:authorship',
+        'scientificNameAuthorship_ids_ss' => 'dc:creator',
         'family_s' => 'wfo:familyName',
         'genus_s' => 'wfo:genusName',
         'specificEpithet_s' => 'wfo:specificEpithet',
@@ -228,12 +228,14 @@ function getTaxonNameResource($graph, $wfo_root_id){
         'namePublishedInID_s' => 'wfo:publicationID',
         'scientificNameID_s' => 'wfo:nameID',
         'originalNameUsageID_s' => 'wfo:hasBasionym'
+
     );
 
     $nom_values = array();
 
     $usages = array();
 
+    // create a map of the latest values
     $latest_usage = null;
     foreach ($response->response->docs as $usage) {
         
@@ -248,6 +250,8 @@ function getTaxonNameResource($graph, $wfo_root_id){
 
     }
 
+
+    // add the mapped values to the name graph doc
     foreach($nom_values as $rdf_prop => $value){
 
         if($rdf_prop == 'wfo:hasBasionym'){
@@ -256,7 +260,18 @@ function getTaxonNameResource($graph, $wfo_root_id){
             $rank_name = strtolower($value);
             $name->add($rdf_prop, $graph->resource('wfo:' . $rank_name));
         }else{
-            $name->set($rdf_prop, $value);
+            if(is_array($value)){
+                foreach ($value as $v) {
+                    if(filter_var($v, FILTER_VALIDATE_URL)){
+                        $name->add($rdf_prop, $graph->resource($v));
+                    }else{
+                        $name->add($rdf_prop, $v);
+                    }
+                }
+            }else{
+                $name->set($rdf_prop, $value);
+            }
+            
         }
 
         
@@ -264,7 +279,7 @@ function getTaxonNameResource($graph, $wfo_root_id){
 
     foreach($usages as $usage){
 
-        // a useage is in a taxon, either as
+        // a usage is in a taxon, either as
         if($usage->taxonomicStatus_s == 'Synonym'){
             if(isset($usage->acceptedNameUsageID_s)){
                 $name->add('wfo:isSynonymOf', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
