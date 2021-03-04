@@ -220,7 +220,7 @@ function build_higher_classification($taxon, $lineage){
 
 function get_cache_path($taxon){
 
-    $cache_dir = 'cache/' . substr($taxon->id, -5);
+    $cache_dir = 'cache/' . substr($taxon->id, -7);
        
     if(!file_exists($cache_dir)){
         mkdir($cache_dir, 0777, true);
