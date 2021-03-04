@@ -59,7 +59,7 @@ function process_taxon($taxon){
     // send the contents to the user
     if(php_sapi_name() !== 'cli'){
         header("Content-type: application/octet-stream");
-        header('Content-Disposition: attachment; filename="' . $taxon_id . '.zip' . '"');
+        header('Content-Disposition: attachment; filename="' . $taxon->id . '.zip' . '"');
         readfile($cache_path . '.zip');
         exit;
     }else{
