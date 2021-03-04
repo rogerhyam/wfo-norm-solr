@@ -5,5 +5,9 @@
 # turn off multiviews in the virtual host or /terms won't work
 
 RewriteEngine on
+RewriteCond %{REQUEST_URI} !^/edit/
+RewriteCond %{REQUEST_URI} !^/download/
 RewriteCond %{REQUEST_URI} !^/index.php$
+RewriteCond %{REQUEST_URI} !^/lookup_authors_test.php
 RewriteRule ^(.+)$ /index.php?url=$1 [NC,L]
+

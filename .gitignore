@@ -4,3 +4,5 @@ seed/*.csv
 
 composer.phar
 vendor/*
+edit/*
+cache/*

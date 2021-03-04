@@ -51,8 +51,14 @@ if (!$mysqli->set_charset("utf8")) {
 
 // used all over to generate guids
 function get_uri($taxon_id){
+  if(php_sapi_name() === 'cli'){
+    return "https://list.worldfloraonline.org/" . $taxon_id;
+  }else{
     return (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]/" . $taxon_id;
+  }
 }
+  
+    
 
 
 
