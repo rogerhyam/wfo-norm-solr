@@ -107,6 +107,71 @@ class TaxonName{
         $name_data['id'] = $name_id;
 
         return new TaxonName((object)$name_data);
+    }
+
+    public static function getByMatching($name_string, $authors_string ){
+
+        $matching_names = array();
+
+        $words = preg_split('/[\s,.]+/', $name_string);
+
+        $filters = array();
+        $filters[] = 'snapshot_version_s:' . WFO_DEFAULT_VERSION;
+
+        switch (count($words)) {
+
+            // One word - names of genus and above.
+            case 1:
+                $filters[] = 'scientificName_s:' . $words[0];
+                break;
+            
+            // Two words is species
+            case 2:
+                $filters[] = 'scientificName_s:' . implode(' ', $words);
+                $filters[] = 'genus_s:' . $words[0];
+                $filters[] = '-infraspecificEpithet_s:["" TO *]';// empty infraspecific
+                break;
+
+            // Three words is subspecific
+            case 3:
+                $filters[] = 'genus_s:' . $words[0];
+                $filters[] = 'specificEpithet_s:' . $words[1];
+                $filters[] = 'infraspecificEpithet_s:' . $words[2];
+                break;
+
+            // Four words is subspecific with rank between species 
+            // and subspecific part
+            case 2:
+                $filters[] = 'genus_s:' . $words[0];
+                $filters[] = 'specificEpithet_s:' . $words[1];
+                $filters[] = 'infraspecificEpithet_s:' . $words[3];
+                break;
+
+            // abject failure
+            default:
+                error_log('No name match for :' . $name_string);
+                return $matching_names;
+                break;
+        }
+
+        if($authors_string){
+            $filters[] = 'scientificNameAuthorship_s:' . $authors_string;
+        }
+
+        $query = array(
+            'query' => '*:*',
+            'filter' => $filters,
+            'sort' => 'scientificName_s asc'
+        );
+        $response = json_decode(solr_run_search($query));
+
+        foreach ($response->response->docs as $usage) {
+            $matching_names[] = TaxonName::getById($usage->taxonID_s);
+        }
+
+        // FIXME - add author filter.
+
+        return $matching_names;
 
     }
 

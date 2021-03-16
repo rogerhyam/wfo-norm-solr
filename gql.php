@@ -72,6 +72,32 @@ $schema = new Schema([
                     return TaxonName::getById( $args['nameId'] );
                 }
             ],
+            'taxonNameMatch' => [
+                'type' => Type::listOf(TypeRegister::taxonNameType()),
+                'description' => 'Returns Taxon Names matching the supplied string(s)',
+                'args' => [
+                    'name' => [
+                        'type' => Type::string(),
+                        'description' => "
+                            The name of the taxon without authority string.
+                            Could be one word - names of genus and above.
+                            Could be two words - species.
+                            Could be three words - subspecific taxa without rank abbreviation.
+                            Could be four words - subspecific taxa, third word is assumed the rank and will be ignored for matching.                       
+                        "
+                    ],
+                    'authors' => [
+                        'type' => Type::string(),
+                        'description' => 'The complete author string using standard author abbreviations where available.
+                        The author string is a further filter on the name string. You can not look for names just based on author string.'
+                    ],
+                ],
+                'resolve' => function($rootValue, $args, $context, $info) {
+                    $name_string = isset($args['name']) ? $args['name'] : "";
+                    $authors_string = isset($args['authors']) ? $args['authors'] : "";
+                    return TaxonName::getByMatching( $name_string, $authors_string );
+                }
+            ],
             'taxonConceptSuggestion' => [
                 'type' => Type::listOf(TypeRegister::taxonConceptType()),
                 'description' => 'Suggests a taxon from the preferred (most recent) taxonomy when given a partial name string.
