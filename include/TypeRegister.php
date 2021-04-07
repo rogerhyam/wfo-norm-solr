@@ -3,6 +3,7 @@
 require_once('include/TaxonConceptType.php');
 require_once('include/TaxonNameType.php');
 require_once('include/ClassificationType.php');
+require_once('include/TaxonConceptStatType.php');
 
 /*
 
@@ -14,6 +15,7 @@ require_once('include/ClassificationType.php');
 class TypeRegister {
 
     private static $taxonConceptType;
+    private static $taxonConceptStatType;
     private static $taxonNameType;
     private static $classificationType;
 
@@ -27,6 +29,10 @@ class TypeRegister {
 
     public static function classificationType(){
         return self::$classificationType ?: (self::$classificationType = new ClassificationType());
+    }
+
+    public static function taxonConceptStatType(){
+        return self::$taxonConceptStatType ?: (self::$taxonConceptStatType = new TaxonConceptStatType());
     }
 
 }

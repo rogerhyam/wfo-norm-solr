@@ -129,6 +129,22 @@ while($row = fgetcsv($file, 2000, "\t")){
     $solr_doc['scientificNameAuthorship_labels_ss'] = $authorTeam->getAuthorLabels();
     $solr_doc['scientificNameAuthorship_ids_ss'] = $authorTeam->getAuthorIds();
 
+    // rank as lowercase for stats
+    $solr_doc['taxonRank_lower_s'] = strtolower($row[array_search('taxonRank', $fields)]);
+
+    // we save the name as a path so we can search on it.
+    // get get species and subspecific taxa
+    $path = "";
+    $parts = explode(' ', $row[array_search('scientificName', $fields)]);
+    if(count($parts) == 4) unset($parts[2]); // remove the rank
+    $path = "/" . implode('/', $parts);
+    // no naughty chars in paths. Just letters and forward slash
+    $path = preg_replace('/[^A-Za-z\/]/', '', $path);
+    // lowercase it so we can use it for searching easily
+    $path = strtolower($path);
+    $solr_doc['name_descendent_path'] = $path;
+    $solr_doc['name_ancestor_path'] = $path;
+
     $solr_docs[] = $solr_doc;
 
     $line_count++;

@@ -105,15 +105,29 @@ $schema = new Schema([
                 'args' => [
                     'termsString' => [
                         'type' => Type::string(),
-                        'description' => 'String representing all or part of a taxon name.
-                        Search is case sensitive to differentiate genera from epithets.
-                        An effective search strategy is to just type the first four letters of a 
-                        genus and species name, capitalizing the genus.
-                        '
-                    ]
+                        'description' => 'The string to search on.'
+                    ],
+                    'byRelevance' => [
+                        'type' => Type::boolean(),
+                        'description' => 'If true then a search is across all fields and results are by relevance. If false (the default) then whole words are taken to form 
+                        part of a taxon name and results are sorted by taxon'
+                    ],
+                    'limit' => [
+                        'type' => Type::int(),
+                        'description' => 'Maximum number of results to return. Default is 30'
+                    ],
+                    'offset' => [
+                        'type' => Type::int(),
+                        'description' => 'How far into the results set to start returning items, so you can implement paging. Default is 0'
+                    ],
                 ],
                 'resolve' => function($rootValue, $args, $context, $info) {
-                    return  TaxonConcept::getTaxonConceptSuggestion( $args['termsString']  );
+                    
+                    $by_relevance = isset($args['byRelevance']) ?  $args['byRelevance'] : false;
+                    $limit = isset($args['limit']) ? $args['limit'] : 30;
+                    $offset = isset($args['offset']) ? $args['offset'] : 0;
+                    
+                    return  TaxonConcept::getTaxonConceptSuggestion( $args['termsString'], $by_relevance, $limit, $offset);
                 }
             ]
         ]

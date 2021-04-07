@@ -5,6 +5,7 @@ require_once('include/TaxonName.php');
 require_once('include/Classification.php');
 require_once('include/solr_functions.php');
 require_once('include/functions.php');
+require_once('include/TaxonConceptStat.php');
 
 class TaxonConcept{
 
@@ -111,7 +112,7 @@ class TaxonConcept{
         }
 
         $response = json_decode(solr_run_search($query));
-        error_log(print_r($response, true));
+        //error_log(print_r($response, true));
         if($response->response->numFound > 0){
             foreach ($response->response->docs as $kid) {
                 $this->hasPart[] = TaxonConcept::getById($kid->id);
@@ -191,21 +192,36 @@ class TaxonConcept{
         return $this->synonyms;
     }
 
-    public static function getTaxonConceptSuggestion( $terms ){
+    public static function getTaxonConceptSuggestion( $terms, $by_relevance = false, $limit = 30, $offset = 0 ){
 
+        if($by_relevance){
+            // just do a generic string search
+            $query = array(
+                'query' => "_text_:$terms",
+                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'scientificName_s asc',
+                'limit' => $limit,
+                'offset' => $offset
+            );
+        }else{
 
-        $parts = explode(' ', trim($terms));
-        $parts = array_map(function($pat) { return trim($pat) . '*' ; }, $parts);
-        $q = implode('', $parts);
-        
-        // build a query
-        $query = array(
-            'query' => "scientificName_s:$q",
-            'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
-            'limit' => 30
-        );
-        
+            // we are looking for a plant name, entire, and expect its children
+            $name_path = trim(strtolower($terms)); // all lower
+            $name_path =  preg_replace('/\s+/', '/', $name_path); // no double spaces & replace with slashes;
+            $name_path = '/' . $name_path;
+
+            $query = array(
+                'query' => "name_ancestor_path:\"$name_path\" OR name_descendent_path:\"$name_path\"",
+                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'name_ancestor_path asc',
+                'limit' => $limit,
+                'offset' => $offset
+            );
+        }
+
         $response = json_decode(solr_run_search($query));
+
+        error_log(print_r($response, true));
 
         $taxa = array();
 
@@ -228,6 +244,80 @@ class TaxonConcept{
 
         return array_values($taxa);
 
+    }
+
+    public function getStats(){
+        
+        $stats = array();
+
+        // we only work with families and genera because of how we generate stuff
+        $rank = $this->solr_doc->taxonRank_lower_s;
+        if($rank != 'family' && $rank != 'genus'){
+            return $stats;
+        }
+
+        $query = array(
+            'query' => 'acceptedNameUsageID_s:' . $this->solr_doc->taxonID_s, 
+            'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
+            'facet' => array(
+                "rank" => array(
+                    "type" => "terms",
+                    "field" => "taxonRank_lower_s",
+                    'limit' => 1000,
+                    'facet' => array(
+                        "status" => array(
+                            "type" => "terms",
+                            "field" => "taxonomicStatus_s",
+                            'limit' => 1000
+                        )
+                    )
+                ),
+                "status" => array(
+                    "type" => "terms",
+                    "field" => "taxonomicStatus_s",
+                    'limit' => 1000
+                )
+            ),
+            'limit' => 0
+        );
+
+        if($rank == 'family'){
+            $query['query'] = 'family_s:' .  $this->solr_doc->scientificName_s;
+        }elseif($rank == 'genus'){
+            $query['query'] = 'genus_s:' .  $this->solr_doc->scientificName_s;
+        }else{
+            return $stats;
+        }
+
+        $response = json_decode(solr_run_search($query));
+
+        if(isset($response->facets)){
+            $facets = $response->facets;
+
+            // work through the rank/status facets
+            if(isset($facets->rank)){
+                foreach ($facets->rank->buckets as $rank) {
+                    $stats[] = new TaxonConceptStat($rank->val, "Total names with rank '$rank->val'", $rank->count);
+                    if(isset($rank->status)){
+                        foreach ($rank->status->buckets as $status) {
+                            $stats[] = new TaxonConceptStat($rank->val . '-' . $status->val, "Total names with rank '$rank->val' and status '$status->val'", $status->count);
+                        }
+                    }
+                }
+            }
+
+            // work through the status/rank facets
+            if(isset($facets->rank)){
+                foreach ($facets->status->buckets as $status) {
+                    $stats[] = new TaxonConceptStat($status->val, "Total names with status '$status->val'", $status->count);
+                }
+            }
+
+
+        }
+        
+        
+        return $stats;
     }
 
 

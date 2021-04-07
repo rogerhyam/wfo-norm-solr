@@ -141,6 +141,14 @@ class TaxonConceptType extends ObjectType
                         If the accepted TaxonName for the current TaxonConcept was a synonym of a TaxonConcept in the last classification then the 
                         TaxonConcept in the last classification is considered the source for this taxon and not to be replaced by it.
                         This taxon is not considered to replace the previous taxon as that one may have an equivalent (with the same accepted name) in this classification."
+                    ],
+                    'stats' => [
+                        'type' => Type::listOf(TypeRegister::taxonConceptStatType()),
+                        'resolve' => function($taxon){
+                            // we load the name if we need to!
+                            return $taxon->getStats();
+                        },
+                        'description' => "A selection of statistics that can be gleaned from the index. These are currently only provided for Families and Genera."
                     ]
                 ];
             }
