@@ -24,7 +24,9 @@ class TaxonConcept{
     public string $guid;
     public string $web;
     public Classification $classification;
+    public TaxonName $highlightedSynonym;
     public int $partsCount = -1; 
+
 
     public function __construct($solr_doc){
 
@@ -226,15 +228,24 @@ class TaxonConcept{
         $taxa = array();
 
         if(isset($response->response->docs)){
+
             for ($i=0; $i < count($response->response->docs); $i++) { 
             
                 $doc = $response->response->docs[$i];
         
                 // if it is a synonym we replace it with the accepted taxon
                 if($doc->taxonomicStatus_s == 'Synonym'){
-                    $syn = $doc;
-                    $accepted = solr_get_doc_by_id($doc->acceptedNameUsageID_s . '-' . $doc->snapshot_version_s);
-                    $taxa[$accepted->id] = TaxonConcept::getById($accepted->id);
+                   
+                    // load the accepted name
+                    $accepted_doc = solr_get_doc_by_id($doc->acceptedNameUsageID_s . '-' . $doc->snapshot_version_s);
+                    $accepted = TaxonConcept::getById($accepted_doc->id);
+
+                    // we highlight the synonym so that people know why it was returned.
+                    $accepted->highlightedSynonym = TaxonName::getById($doc->taxonID_s);
+
+                    // add the accepted name to the returned list
+                    $taxa[$accepted->id] = $accepted;
+
                 }else{
                     $taxa[$doc->id] = TaxonConcept::getById($doc->id);        
                 }
