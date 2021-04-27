@@ -196,7 +196,9 @@ class TaxonConcept{
 
     public static function getTaxonConceptSuggestion( $terms, $by_relevance = false, $limit = 30, $offset = 0 ){
 
-        if($by_relevance){
+        // we search by relevance if we don't have a whole word (there is a space in the string)
+        // or the relevance box is ticked.
+        if($by_relevance || !strpos($terms, ' ')){
             // just do a generic string search
             $query = array(
                 'query' => "_text_:$terms",
