@@ -101,7 +101,9 @@ $schema = new Schema([
             'taxonConceptSuggestion' => [
                 'type' => Type::listOf(TypeRegister::taxonConceptType()),
                 'description' => 'Suggests a taxon from the preferred (most recent) taxonomy when given a partial name string.
-                    Designed to be useful in providing suggestions when identifying specimens.',
+                    Designed to be useful in providing suggestions when identifying specimens. Note this returns accepted taxa only not names.
+                    The search string may match a synonym in which case the accepted taxon for that synonym is returned (which may have a name that doesn\'t match the search terms)
+                    but the synonym is included in the highlightedSynonym property of the taxon. You may choose to display to the user the accepted name, synonym or both.',
                 'args' => [
                     'termsString' => [
                         'type' => Type::string(),
@@ -109,8 +111,7 @@ $schema = new Schema([
                     ],
                     'byRelevance' => [
                         'type' => Type::boolean(),
-                        'description' => 'If true then a search is across all fields and results are by relevance. If false (the default) then whole words are taken to form 
-                        part of a taxon name and results are sorted by taxon'
+                        'description' => 'If true then a search is across all fields and results are by relevance. If false (the default) then taxa are returned by the name starting with the letters supplied.'
                     ],
                     'limit' => [
                         'type' => Type::int(),

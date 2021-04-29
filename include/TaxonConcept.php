@@ -198,7 +198,7 @@ class TaxonConcept{
 
         // we search by relevance if we don't have a whole word (there is a space in the string)
         // or the relevance box is ticked.
-        if($by_relevance || !strpos($terms, ' ')){
+        if($by_relevance){
             // just do a generic string search
             $query = array(
                 'query' => "_text_:$terms",
@@ -209,7 +209,24 @@ class TaxonConcept{
             );
         }else{
 
+            $name = trim(strtolower($terms));
+            $name = ucfirst($name); // all names start with an upper case letter
+            $name = str_replace(' ', '\ ', $name);
+            $name = $name . "*";
+
+            $query = array(
+                'query' => "scientificName_s:$name",
+                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'scientificName_s asc',
+                'limit' => $limit,
+                'offset' => $offset
+            );
+
             // we are looking for a plant name, entire, and expect its children
+            /*
+
+            // former method using hierarchy searching
+
             $name_path = trim(strtolower($terms)); // all lower
             $name_path =  preg_replace('/\s+/', '/', $name_path); // no double spaces & replace with slashes;
             $name_path = '/' . $name_path;
@@ -221,11 +238,14 @@ class TaxonConcept{
                 'limit' => $limit,
                 'offset' => $offset
             );
+            */
         }
+
+        error_log(print_r($query, true));
 
         $response = json_decode(solr_run_search($query));
 
-        error_log(print_r($response, true));
+        //error_log(print_r($response, true));
 
         $taxa = array();
 
