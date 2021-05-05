@@ -58,11 +58,6 @@ class TaxonConceptType extends ObjectType
                         This includes homotypic (nomenclatural) synonyms which share the same type specimen as the accepted name 
                         and heterotypic (taxonomic) synonyms whose type specimens are considered to fall within the circumscription of this taxon."
                     ],
-                    'highlightedSynonym' => [
-                        'type' => TypeRegister::taxonNameType(),
-                        'description' => "One of the synonyms (from hasSynonym) which is or relevance in the current context. 
-                        e.g. If the taxon has been returned in search results but the search terms actually matched the synonym then it can be highlighted here."
-                    ],
                     'hasPart' => [
                         'type' => Type::listOf(TypeRegister::taxonConceptType()),
                         'resolve' => function($taxon, $args, $context, $info){

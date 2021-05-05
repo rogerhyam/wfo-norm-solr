@@ -102,8 +102,9 @@ $schema = new Schema([
                 'type' => Type::listOf(TypeRegister::taxonConceptType()),
                 'description' => 'Suggests a taxon from the preferred (most recent) taxonomy when given a partial name string.
                     Designed to be useful in providing suggestions when identifying specimens. Note this returns accepted taxa only not names.
-                    The search string may match a synonym in which case the accepted taxon for that synonym is returned (which may have a name that doesn\'t match the search terms)
-                    but the synonym is included in the highlightedSynonym property of the taxon. You may choose to display to the user the accepted name, synonym or both.',
+                    The search string may match a synonym in which case the accepted taxon for that synonym is returned (which may have a name that doesn\'t match the search terms).
+                    You may need to navigate the synonyms of the returned taxon to find the string that was submitted.
+                    ',
                 'args' => [
                     'termsString' => [
                         'type' => Type::string(),
@@ -120,21 +121,48 @@ $schema = new Schema([
                     'offset' => [
                         'type' => Type::int(),
                         'description' => 'How far into the results set to start returning items, so you can implement paging. Default is 0'
-                    ],
+                    ]
                 ],
+                'resolve' => function($rootValue, $args, $context, $info) {            
+                        $by_relevance = isset($args['byRelevance']) ?  $args['byRelevance'] : false;
+                        $limit = isset($args['limit']) ? $args['limit'] : 30;
+                        $offset = isset($args['offset']) ? $args['offset'] : 0;
+                        return  TaxonConcept::getTaxonConceptSuggestion( $args['termsString'], $by_relevance, $limit, $offset);
+                    }
+                ],
+            'taxonNameSuggestion' => [
+                'type' => Type::listOf(TypeRegister::taxonNameType()),
+                'description' => 'Suggests a name from the preferred (most recent) taxonomy when given a partial name string.
+                    Note this returns NAMEs only (c.f. taxonConceptSuggest). To get the current status of the name (if it is the name of a taxon) you need to look at the currentPreferredUsage property of the name.',
+                'args' => [
+                        'termsString' => [
+                            'type' => Type::string(),
+                            'description' => 'The string to search on.'
+                        ],
+                        'byRelevance' => [
+                            'type' => Type::boolean(),
+                            'description' => 'If true then a search is across all fields and results are by relevance. If false (the default) then taxa are returned by the name starting with the letters supplied.'
+                        ],
+                        'limit' => [
+                            'type' => Type::int(),
+                            'description' => 'Maximum number of results to return. Default is 30'
+                        ],
+                        'offset' => [
+                            'type' => Type::int(),
+                            'description' => 'How far into the results set to start returning items, so you can implement paging. Default is 0'
+                        ],
+                    ],
                 'resolve' => function($rootValue, $args, $context, $info) {
-                    
-                    $by_relevance = isset($args['byRelevance']) ?  $args['byRelevance'] : false;
-                    $limit = isset($args['limit']) ? $args['limit'] : 30;
-                    $offset = isset($args['offset']) ? $args['offset'] : 0;
-                    
-                    return  TaxonConcept::getTaxonConceptSuggestion( $args['termsString'], $by_relevance, $limit, $offset);
-                }
-            ]
-        ]
-            ]
-            )
-            ]);
+                        $by_relevance = isset($args['byRelevance']) ?  $args['byRelevance'] : false;
+                        $limit = isset($args['limit']) ? $args['limit'] : 30;
+                        $offset = isset($args['offset']) ? $args['offset'] : 0;
+                        return  TaxonName::getTaxonNameSuggestion( $args['termsString'], $by_relevance, $limit, $offset);
+                    }
+            ] // taxonNameSuggestion
+        ]// fields
+    ]) // object type
+    ]); // schema
+    
 
 $rawInput = file_get_contents('php://input');
 

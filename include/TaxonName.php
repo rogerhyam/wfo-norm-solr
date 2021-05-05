@@ -193,6 +193,58 @@ class TaxonName{
             return null;
         }
     }
+
+    public static function getTaxonNameSuggestion( $terms, $by_relevance = false, $limit = 30, $offset = 0 ){
+
+
+        if($by_relevance){
+            // just do a generic string search
+            $query = array(
+                'query' => "_text_:$terms",
+                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'scientificName_s asc',
+                'limit' => $limit,
+                'offset' => $offset
+            );
+        }else{
+
+            $name = trim(strtolower($terms));
+            $name = ucfirst($name); // all names start with an upper case letter
+            $name = str_replace(' ', '\ ', $name);
+            $name = $name . "*";
+
+            $query = array(
+                'query' => "scientificName_s:$name",
+                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'scientificName_s asc',
+                'limit' => $limit,
+                'offset' => $offset
+            );
+
+        }
+
+       //error_log(print_r($query, true));
+
+        $response = json_decode(solr_run_search($query));
+
+        //error_log(print_r($response, true));
+
+        $names = array();
+
+        if(isset($response->response->docs)){
+
+            for ($i=0; $i < count($response->response->docs); $i++) { 
+            
+                $doc = $response->response->docs[$i];
+                $names[$doc->taxonID_s] = TaxonName::getById($doc->taxonID_s);
+
+            }
+        }
+
+//        error_log(print_r($names, true));
+        return array_values($names);
+
+    }
     
 
 }

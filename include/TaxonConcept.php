@@ -24,7 +24,7 @@ class TaxonConcept{
     public string $guid;
     public string $web;
     public Classification $classification;
-    public TaxonName $highlightedSynonym;
+
     public int $partsCount = -1; 
 
 
@@ -181,7 +181,7 @@ class TaxonConcept{
             'query' => 'acceptedNameUsageID_s:' . $this->solr_doc->taxonID_s, 
             'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
             'limit' => 1000000,
-            'sort' => 'id asc'
+            'sort' => 'scientificName_s asc'
         );
         $response = json_decode(solr_run_search($query));
     
@@ -222,26 +222,9 @@ class TaxonConcept{
                 'offset' => $offset
             );
 
-            // we are looking for a plant name, entire, and expect its children
-            /*
-
-            // former method using hierarchy searching
-
-            $name_path = trim(strtolower($terms)); // all lower
-            $name_path =  preg_replace('/\s+/', '/', $name_path); // no double spaces & replace with slashes;
-            $name_path = '/' . $name_path;
-
-            $query = array(
-                'query' => "name_ancestor_path:\"$name_path\" OR name_descendent_path:\"$name_path\"",
-                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
-                'sort' => 'name_ancestor_path asc',
-                'limit' => $limit,
-                'offset' => $offset
-            );
-            */
         }
 
-        error_log(print_r($query, true));
+       //error_log(print_r($query, true));
 
         $response = json_decode(solr_run_search($query));
 
@@ -252,29 +235,12 @@ class TaxonConcept{
         if(isset($response->response->docs)){
 
             for ($i=0; $i < count($response->response->docs); $i++) { 
-            
                 $doc = $response->response->docs[$i];
-        
-                // if it is a synonym we replace it with the accepted taxon
-                if($doc->taxonomicStatus_s == 'Synonym'){
-                   
-                    // load the accepted name
-                    $accepted_doc = solr_get_doc_by_id($doc->acceptedNameUsageID_s . '-' . $doc->snapshot_version_s);
-                    $accepted = TaxonConcept::getById($accepted_doc->id);
-
-                    // we highlight the synonym so that people know why it was returned.
-                    $accepted->highlightedSynonym = TaxonName::getById($doc->taxonID_s);
-
-                    // add the accepted name to the returned list
-                    $taxa[$accepted->id] = $accepted;
-
-                }else{
-                    $taxa[$doc->id] = TaxonConcept::getById($doc->id);        
-                }
-        
+                $taxa[$doc->id] = TaxonConcept::getById($doc->id);
             }
         }
 
+        error_log(print_r($taxa, true));
         return array_values($taxa);
 
     }
