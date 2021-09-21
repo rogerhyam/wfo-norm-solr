@@ -7,7 +7,7 @@ require_once('include/AuthorTeam.php');
 
 /* useful curl commands to clean things up
 
- curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"snapshot_version_s:2020-2"} }'
+ curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"snapshot_version_s:2021-09"} }' --user solr:****
  curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"commit":{} }'
 
 */

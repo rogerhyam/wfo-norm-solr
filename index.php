@@ -17,7 +17,7 @@ $path_parts = explode('/', $_SERVER["REQUEST_URI"]);
 array_shift($path_parts); // lose the first blank one
 
 // do the welcome page if there is not id
-if(strlen($path_parts[0]) == 0){
+if(strlen($path_parts[0]) == 'index.php'){
     include('welcome.php');
     exit;
 }

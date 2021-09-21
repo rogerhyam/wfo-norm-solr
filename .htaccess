@@ -2,6 +2,9 @@
     Header always set Access-Control-Allow-Origin "*"
 </IfModule>
 
+# redirect root calls to the human interface
+RedirectMatch ^/$ /ui/
+
 # turn off multiviews in the virtual host or /terms won't work
 
 RewriteEngine on
