@@ -3,7 +3,7 @@
 </IfModule>
 
 # redirect root calls to the human interface
-RedirectMatch ^/$ /ui/
+# RedirectMatch ^/$ /ui/
 
 # turn off multiviews in the virtual host or /terms won't work
 

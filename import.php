@@ -7,8 +7,8 @@ require_once('include/AuthorTeam.php');
 
 /* useful curl commands to clean things up
 
- curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"snapshot_version_s:2021-09"} }' --user solr:****
- curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"commit":{} }'
+ curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"snapshot_version_s:2021-09"} }' --user wfo:****
+ curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"commit":{} }' --user wfo:****
 
 */
 
@@ -99,12 +99,20 @@ while($row = fgetcsv($file, 2000, "\t")){
         // each field is stored as a _s at a minimum
         $field = $fields[$i];
         $val = trim($row[$i]);
+
+        // we need to fix capitalization in the taxonomicStatus_s field 
+        // because it has become unreliable.
+        if($field == 'taxonomicStatus'){
+            $val = ucfirst( strtolower( trim($val) ) );
+        }
+
         $solr_doc[$field . '_s'] = $val;
 
         // the id of the solr record ID is the WFO id plus the version
         if($field == 'taxonID'){
             $solr_doc['id'] = $val . '-' . $version;
         }
+
 
         // created and modified can be stored as date types
         if($field == 'created'|| $field == 'modified'){

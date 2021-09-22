@@ -67,8 +67,23 @@ php -d memory_limit=1G download_generate_cache.php -v 2021-09
 ```
 This only needs to be run once after each import 
 
+## Changing the default taxonomy
+
+There is a config variable in the config.php file that sets the default taxonomy used for searching.
 
 
+query{
+taxonConceptById(taxonId: ""){
+  id
+  hasName{
+    name
+  }
+}
+}
 
 
+wfo-9499999999-2019-05
+wfo-9949999999-2021-09
+
+wfo-7000000440
 
