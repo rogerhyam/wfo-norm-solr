@@ -24,6 +24,36 @@ class TaxonName{
     public ?string $rank;
     public string $web;
 
+    public Array $ranks = array('Class',
+                                        'Subclass',
+                                        'Phylum',
+                                        'Order',
+                                        'Superorder',
+                                        'Family',
+                                        'Subfamily',
+                                        'Tribe',
+                                        'Subtribe',
+                                        'Genus',
+                                        'Subgenus',
+                                        'Section',
+                                        'Subsection',
+                                        'Series',
+                                        'Subseries',
+                                        'Species',
+                                        'Subspecies',
+                                        'Variety',
+                                        'Subvariety',
+                                        'Form',
+                                        'Forma',
+                                        'Subforma',
+                                        'Subform',
+                                        'Nothospecies',
+                                        'Nothosubsp',
+                                        'Nothovar',
+                                        'Infraspecificname',
+                                        'Unranked',
+                                        'Unrecognised');
+
     public function __construct($name_data){
         // add self to the list of created docs
         $this->id = $name_data->id;
@@ -49,7 +79,8 @@ class TaxonName{
         isset($name_data->namePublishedInID_s) ? $this->publicationID = $name_data->namePublishedInID_s : $this->publicationID = null;
         isset($name_data->scientificNameID_s) ? $this->nomenclatorID = $name_data->scientificNameID_s : $this->nomenclatorID = null;
 
-        isset($name_data->taxonRank_s) ? $this->rank = ucwords(strtolower($name_data->taxonRank_s)) : $this->taxonRank_s = null;
+        isset($name_data->taxonRank_s) ? $this->rank = ucwords(strtolower(trim($name_data->taxonRank_s, " \t\n\r,."))) : $this->taxonRank_s = null;
+        if(!in_array($this->rank, $this->ranks)) $this->rank = 'Unrecognised';
 
         // and bool
         $this->currentPreferredUsageIsSynonym = $name_data->currentPreferredUsageIsSynonym;

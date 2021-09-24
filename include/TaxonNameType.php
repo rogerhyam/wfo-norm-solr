@@ -11,7 +11,6 @@ require_once('include/TypeRegister.php');
 
 class TaxonNameType extends ObjectType
 {
-
     public function __construct()
     {
         $config = [
@@ -54,26 +53,35 @@ class TaxonNameType extends ObjectType
                             'description' => 'Used for the relative position of the taxon with this name in the taxonomic hierarchy at time of publication.
                                 For suprageneric names published on or after 1 January 1887, the rank is indicated by the termination of the name.
                                 For names published on or after 1 January 1953, a clear indication of the rank is required for valid publication.',
-                            'values' => [
-                                'Phylum',
-                                'Order',
-                                'Family',
-                                'Subfamily',
-                                'Tribe',
-                                'Subtribe',
-                                'Genus',
-                                'Subgenus',
-                                'Section',
-                                'Species',
-                                'Subspecies',
-                                'Variety',
-                                'Subvariety',
-                                'Form',
-                                'Forma',
-                                'Subform',
-                                'Nothospecies',
-                                'Infraspecificname'
-                                ]
+                            'values' => ['Class',
+                                        'Subclass',
+                                        'Phylum',
+                                        'Order',
+                                        'Superorder',
+                                        'Family',
+                                        'Subfamily',
+                                        'Tribe',
+                                        'Subtribe',
+                                        'Genus',
+                                        'Subgenus',
+                                        'Section',
+                                        'Subsection',
+                                        'Series',
+                                        'Subseries',
+                                        'Species',
+                                        'Subspecies',
+                                        'Variety',
+                                        'Subvariety',
+                                        'Form',
+                                        'Forma',
+                                        'Subforma',
+                                        'Subform',
+                                        'Nothospecies',
+                                        'Nothosubsp',
+                                        'Nothovar',
+                                        'Infraspecificname',
+                                        'Unranked',
+                                        'Unrecognised']
                         ]),
                         "description" => "The name of the level within the classification at which this name was published."
                     ],
