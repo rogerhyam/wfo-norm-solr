@@ -14,7 +14,7 @@ define('SOLR_QUERY_URI','http://localhost:8983/solr/wfo');
 // used for lookups and other services that don't want to 
 // trouble themselves with many versions of backbone
 // will normally be set to the most recent.
-define('WFO_DEFAULT_VERSION','2019-05');
+define('WFO_DEFAULT_VERSION','2021-09');
 
 define('SOLR_USER', $solr_user); // from wfo_secrets.php
 define('SOLR_PASSWORD', $solr_password); // from wfo_secrets.php

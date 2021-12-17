@@ -72,18 +72,3 @@ This only needs to be run once after each import
 There is a config variable in the config.php file that sets the default taxonomy used for searching.
 
 
-query{
-taxonConceptById(taxonId: ""){
-  id
-  hasName{
-    name
-  }
-}
-}
-
-
-wfo-9499999999-2019-05
-wfo-9949999999-2021-09
-
-wfo-7000000440
-

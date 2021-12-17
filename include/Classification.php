@@ -118,7 +118,7 @@ class Classification{
             'filter' => array(
                 "taxonomicStatus_s:Accepted",
                 "snapshot_version_s:{$this->id}",
-                "taxonRank_s:phylum"
+                "taxonRank_lower_s:phylum"
             ),
             'fields' => array('id'),
             'limit' => 100

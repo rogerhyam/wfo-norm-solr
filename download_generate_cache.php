@@ -24,9 +24,9 @@ if(isset($ops['v']) && $ops['v']){
     exit;
 }
 
-generate_archives_for('order', $version);
-generate_archives_for('family', $version);
-generate_archives_for('genus', $version);
+generate_archives_for('ORDER', $version);
+generate_archives_for('FAMILY', $version);
+generate_archives_for('GENUS', $version);
 
 function generate_archives_for($rank, $version){
 
@@ -40,7 +40,10 @@ function generate_archives_for($rank, $version){
         'limit' => 1000000,
         'sort' => 'scientificName_s asc'
     );
+    print_r($query);
+
     $response = json_decode(solr_run_search($query));
+
 
     if($response->response->numFound > 0){
         foreach ($response->response->docs as $taxon){
