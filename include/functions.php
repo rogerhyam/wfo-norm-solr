@@ -27,7 +27,7 @@ function get_replaces_replaced($wfo_root_id, $snapshot_version_s){
             // if a taxon has been sunk into synonymy then it isn't replaced by the 
             // synonym it is replaced by the accepted taxon
             $replacement = $response->response->docs[$my_index-1];
-            if($replacement->taxonomicStatus_s == 'Synonym'){
+            if(property_exists($replacement, "taxonomicStatus_s") && $replacement->taxonomicStatus_s == 'Synonym'){
                 $out['dc:isReplacedBy'] = get_uri($replacement->acceptedNameUsageID_s . '-'. $replacement->snapshot_version_s);
             }else{
                 $out['dc:isReplacedBy'] = get_uri($replacement->id);
@@ -42,7 +42,9 @@ function get_replaces_replaced($wfo_root_id, $snapshot_version_s){
             // then it doesn't replace the synyonyms NAME in the previous version
             $theReplaced = $response->response->docs[$my_index+1];
             
-            if($theReplaced->taxonomicStatus_s == 'Synonym'){
+            error_log($theReplaced->id);
+
+            if(property_exists($theReplaced, "taxonomicStatus_s") && $theReplaced->taxonomicStatus_s == 'Synonym'){
                 // tricky situation. Accepted taxon is errected from previous synonym
                 // this taxon is proparte synonym of whatever the accepted taxon was but it is a taxon-taxon relationship
                 // Could be "errected from" - split from 

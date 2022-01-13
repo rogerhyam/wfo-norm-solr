@@ -40,7 +40,12 @@ class TaxonConcept{
 
         self::$loaded[$this->id] = $this;
 
-        $this->editorialStatus = $solr_doc->taxonomicStatus_s;
+        if(property_exists($solr_doc, "taxonomicStatus_s")){
+            $this->editorialStatus =  $solr_doc->taxonomicStatus_s;
+        }else{
+            $this->editorialStatus =  "unchecked";
+        }
+        
 
         $this->hasName = null;
         $this->hasPart = null;
