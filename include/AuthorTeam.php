@@ -181,7 +181,9 @@ class AuthorTeam{
             $title = $author['label'];
 
             if($author['birth'] || $author['death']){
-                $title .= " " . substr($author['birth'], 0, 4) . "-" . substr($author['death'], 0, 4);
+                $birth_date = $author['birth'] ? substr($author['birth'], 0, 10) : "";
+                $death_date = $author['death'] ? substr($author['death'], 0, 10) : "";
+                $title .= " " . $birth_date . "-" . $death_date;
             }
             
             $link = '<a href="' . $author['person'] . '" title="'. $title .'">' . $abbrev . '</a>';
