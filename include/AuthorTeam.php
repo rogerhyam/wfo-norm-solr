@@ -156,9 +156,9 @@ class AuthorTeam{
 
         $stmt = $mysqli->prepare("INSERT INTO author_lookup (abbreviation, label, uri, image_uri, birth, death) VALUES (?,?,?,?,?,?)");
         echo $mysqli->error;
-        $birth_date = substr($author['birth'], 0, 10);
+        $birth_date = $author['birth'] ? substr($author['birth'], 0, 10) : null;
         if(!preg_match('/[0-9]{4}-[0-9]{2}-[0-9]{2}/', $birth_date)) $birth_date = null;
-        $death_date = substr($author['death'], 0, 10);
+        $death_date = $author['death'] ? substr($author['death'], 0, 10) : null;
         if(!preg_match('/[0-9]{4}-[0-9]{2}-[0-9]{2}/', $death_date)) $death_date = null;
         $stmt->bind_param("ssssss", $author_abbrev, $author['label'], $author['person'], $author['image'], $birth_date, $death_date);
         $stmt->execute();

@@ -7,7 +7,7 @@ require_once('include/AuthorTeam.php');
 
 /* useful curl commands to clean things up
 
- curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"snapshot_version_s:2021-09"} }' --user wfo:****
+ curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"snapshot_version_s:2022-06"} }' --user wfo:****
  curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"commit":{} }' --user wfo:****
 
 */
@@ -79,12 +79,13 @@ $line_count = 0;
 $solr_docs = array();
 $display_length = 0;
 
-while($row = fgetcsv($file, 2000, "\t")){
+while($row = fgetcsv($file, 2500, "\t")){
 
     // integrity check - there should be as many columns as there are fields
     if(count($fields) != count($row)){
+        echo "\nProblem with the row at $line_count\n";
         print_r($row);
-        exit;
+        continue;
     }
 
     $solr_doc = array();
