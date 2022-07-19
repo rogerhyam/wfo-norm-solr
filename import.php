@@ -158,8 +158,8 @@ while($row = fgetcsv($file, 2500, "\t")){
 
     $line_count++;
 
-    // every ten thousand we send them off to solr
-    if(count($solr_docs) >= 10000 || $line_count >= $total_lines){
+    // every ten thousand we send them off to solr - fudged to 1000 for final import - FIXME
+    if(count($solr_docs) >= 1000 || $line_count >= $total_lines -1000){ // fudge for a few blank lines at the end or a 
         //echo "$line_count: \t Sending to SOLR\n";
         $response = solr_add_docs($solr_docs);
         $response = json_decode($response);
