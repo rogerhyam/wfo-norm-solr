@@ -78,9 +78,11 @@ $display_length = 0;
 
 while($row = fgetcsv($file, 2000, "\t")){
 
-    $authorTeam = new AuthorTeam($row[$field_index], true);
-    
     $line_count++;
+
+    if(!isset($row[$field_index])) continue;
+
+    $authorTeam = new AuthorTeam($row[$field_index], true);
 
     // nice progress display
     echo str_repeat(chr(8), $display_length); // rewind
