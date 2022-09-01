@@ -291,12 +291,10 @@ function getTaxonNameResource($graph, $wfo_root_id){
         
     }
     
-    // if the most recent usage is accepted we add a link to it as the accepted
-    // taxon - breaks pure nomenclator
-    if($latest_usage->taxonomicStatus_s == 'Accepted'){
-        $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
-    }
-
+    // link to the most recent usage (whatever this is) so that people can get the usage for a name
+    // changed 2022-09-01
+    $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
+ 
     return $name;
 
 }
