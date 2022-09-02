@@ -156,7 +156,7 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
         'query' => 'acceptedNameUsageID_s:' . $wfo_root_id,
         'filter' => 'snapshot_version_s:' . $taxon_solr->snapshot_version_s,
         'limit' => 1000000,
-        'sort' => 'id asc'
+        'sort' => 'snapshot_version_s asc'
     );
     $response = json_decode(solr_run_search($query));
 
@@ -287,14 +287,19 @@ function getTaxonNameResource($graph, $wfo_root_id){
         }else{
             $name->add('wfo:acceptedNameFor', $graph->resource(get_uri($usage->id)));
         }
-
         
     }
+
+    // the last usage (they are in snapshot order) is the prefered usage
+    $usage = end($usages);
+    if($usage->taxonomicStatus_s == 'Synonym'){
+        if(isset($usage->acceptedNameUsageID_s)){
+            $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+        }
+    }else{
+        $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
+    }
     
-    // link to the most recent usage (whatever this is) so that people can get the usage for a name
-    // changed 2022-09-01
-    $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
- 
     return $name;
 
 }
