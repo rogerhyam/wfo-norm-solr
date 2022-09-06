@@ -228,7 +228,6 @@ function getTaxonNameResource($graph, $wfo_root_id){
         'namePublishedInID_s' => 'wfo:publicationID',
         'scientificNameID_s' => 'wfo:nameID',
         'originalNameUsageID_s' => 'wfo:hasBasionym'
-
     );
 
     $nom_values = array();
@@ -291,15 +290,17 @@ function getTaxonNameResource($graph, $wfo_root_id){
     }
 
     // the last usage (they are in snapshot order) is the prefered usage
-    $usage = end($usages);
-    if($usage->taxonomicStatus_s == 'Synonym'){
-        if(isset($usage->acceptedNameUsageID_s)){
-            $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+    if($usages){
+        $usage = end($usages);
+        if($usage->taxonomicStatus_s == 'Synonym'){
+            if(isset($usage->acceptedNameUsageID_s)){
+                $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+            }
+        }else{
+            $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
         }
-    }else{
-        $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
-    }
-    
+    }   
+
     return $name;
 
 }
