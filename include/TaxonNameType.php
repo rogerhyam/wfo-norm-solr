@@ -35,6 +35,10 @@ class TaxonNameType extends ObjectType
                         'type' => Type::string(),
                         'description' => 'Scientific name, with rank abbreviations for trinomials, but not with author citation.'
                     ],
+                    'fullNameString' => [
+                        'type' => Type::string(),
+                        'description' => 'Scientific name, with rank abbreviations for trinomials and authors and italics marked where possible.'
+                    ],
                     'title' => [
                         'type' => Type::string(),
                         'description' => 'Needed by some GraphQL libraries this is a string rendering of he object probably only useful in development'

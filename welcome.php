@@ -143,6 +143,11 @@ or by looking at the GraphQL documentation using an IDE. The second way might be
     The use of a GraphQL client or IDE are recommended e.g. the GraphiQL plugin for Google Chrome.
 </p>
 
+<p>
+    You don't need fancy libraries to access the GraphQL end point it and it might be the best approach for embedding the WFO Plant List in your project.
+    <a href="demo/">Here are some examples of how to use the API with plain JavaScript.</a>
+</p>
+
 <h2>Semantic Web Resources</h2>
 
 <p>The URI identifiers for TaxonConcepts and TaxonNames follow Semantic Web best practice in implementing content negotiation.</p>

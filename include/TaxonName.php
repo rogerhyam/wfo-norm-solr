@@ -10,6 +10,7 @@ class TaxonName{
     // simple strings that are returned as is
     public string $guid;
     public ?string $name;
+    public ?string $fullNameString;
     public ?string $title;
     public ?string $authorship;
     public ?string $familyName;
@@ -84,6 +85,51 @@ class TaxonName{
 
         // and bool
         $this->currentPreferredUsageIsSynonym = $name_data->currentPreferredUsageIsSynonym;
+
+        // convenience method let's build a full name string with italics - yet again.
+        $full_name = "";
+        
+        if($this->name){
+
+            // this is tricky because data can be so dirty
+            $parts = explode(' ', $this->name);
+            switch (count($parts)) {
+                case 1:
+                    // if it is a genus it is italics otherwise it is above genus
+                    if($this->rank == 'Genus'){
+                        $full_name .= "<i>" . $this->name . "</i>";
+                    }else{
+                        $full_name .= $this->name;
+                    }
+                    break;
+                
+                case 2:
+                    // binomials are always species or subdivisions of genera so italics
+                    $full_name .= "<i>" . $this->name . "</i>";
+                    break;
+
+                case 3:
+                    // trinomials shouldn't exist because they should have a rank in them
+                    // but lets guess they are below genus.
+                    $full_name .= "<i>" . $this->name . "</i>";
+                    break;
+
+                case 4:
+                    // trinomials with a rank! 
+                    $full_name .= "<i>{$parts[0]} {$parts[1]}</i> {$parts[2]} <i>{$parts[3]}</i>";
+                    break;
+
+                default:
+                    // have no idea what is happening here so fail safe
+                    $full_name .= $this->name;
+                    break;
+            }
+
+        } 
+        
+        if($this->authorship) $full_name .= " " . $this->authorship;
+        
+        $this->fullNameString = $full_name;
 
 
     }
