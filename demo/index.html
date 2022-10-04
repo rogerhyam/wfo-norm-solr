@@ -23,6 +23,12 @@
             border: solid gray 1px;
             background-color: lightgray;
         }
+
+        pre {
+            border: solid 1px gray;
+            color: blue;
+            padding: 1em;
+        }
     </style>
 
 
@@ -88,9 +94,13 @@
         <p>This is a demonstration page that shows how data from the <a href="/">WFO
                 Plant
                 List API</a> can easily be embedded in a web page.</p>
-        <p>This one file contains all the code needed to access the API and render the examples below. You can used
+        <p>This one file contains all the code needed to access the API and render the examples below. The code
+            is displayed for the first example to give an indication of how it works. For the rest of the examples you
+            can use
             "view
-            source" or look at it on GitHub if you want to implement something similar yourself. There are no external
+            source" to look at it the full working code or view it on <a
+                href="https://github.com/rogerhyam/wfo-norm-solr/blob/master/demo/index.html">GitHub</a>. There are no
+            external
             library dependencies. The code is heavily
             commented.</p>
 
@@ -98,7 +108,7 @@
             environments.
         </p>
 
-        <p>Examples currently just demonstrate querying the current taxonomy because that is the most common use case
+        <p>Examples just demonstrate querying the current taxonomy because that is the most common use case
             but it is possible to navigate backwards
             and forwards in time to see how the treatment of a name has changed.
             It should be possible to recreate the full WFO Plant List functionality as shown in the portal using calls
@@ -109,11 +119,47 @@
             can be
             download
             freely anyway.</p>
+        <hr />
 
+        <h2>GraphQL Utility Function</h2>
+        <p>This is the utility function used by all examples.</p>
+        <pre>
+    function runGraphQuery(query, variables, giveBack) {
+    
+        const payload = {
+            'query': query,
+            'variables': variables
+        }
+    
+        var options = {
+            'method': 'POST',
+            'contentType': 'application/json',
+            'headers': {},
+            'body': JSON.stringify(payload)
+        };
+    
+        const response = fetch(graphQlUri, options)
+            .then((response) => response.json())
+            .then((data) => giveBack(data));
+    
+        return;
+    }
+        </pre>
         <hr />
         <h2>1: Include full name based on WFO ID</h2>
         <p>This will just look up the WFO ID <strong>wfo-0001048766</strong> and render its full name. The WFO ID is
             hard coded like it was written in by the server.</p>
+
+        <pre>
+    let query =
+    `query{
+        taxonNameById(nameId: "wfo-0001048766"){
+        fullNameString
+        }
+    }`;
+    runGraphQuery(query, {}, (response) => document.getElementById("example-01").innerHTML =
+    response.data.taxonNameById.fullNameString);
+        </pre>
 
         <script>
 
