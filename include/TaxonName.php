@@ -25,36 +25,6 @@ class TaxonName{
     public ?string $rank;
     public string $web;
 
-    public Array $ranks = array('Class',
-                                        'Subclass',
-                                        'Phylum',
-                                        'Order',
-                                        'Superorder',
-                                        'Family',
-                                        'Subfamily',
-                                        'Tribe',
-                                        'Subtribe',
-                                        'Genus',
-                                        'Subgenus',
-                                        'Section',
-                                        'Subsection',
-                                        'Series',
-                                        'Subseries',
-                                        'Species',
-                                        'Subspecies',
-                                        'Variety',
-                                        'Subvariety',
-                                        'Form',
-                                        'Forma',
-                                        'Subforma',
-                                        'Subform',
-                                        'Nothospecies',
-                                        'Nothosubsp',
-                                        'Nothovar',
-                                        'Infraspecificname',
-                                        'Unranked',
-                                        'Unrecognised');
-
     public function __construct($name_data){
         // add self to the list of created docs
         $this->id = $name_data->id;
@@ -66,70 +36,49 @@ class TaxonName{
 
         // set those string fields
         $this->guid = get_uri($this->id);
-        isset($name_data->scientificName_s) ? $this->name = $name_data->scientificName_s : $this->name = null;
+        $this->name = isset($name_data->full_name_string_no_authors_plain_s) ? $name_data->full_name_string_no_authors_plain_s : null;
+        $this->fullNameString = isset($name_data->full_name_string_html_s) ? $name_data->full_name_string_html_s : null;
         $this->title = "TaxonName: " . $this->id . " " . $this->name; // some libraries need a title for every object.
+        $this->authorship = isset($name_data->authors_string_s) ?  $name_data->authors_string_s : null;
+        $this->authorshipHtml = isset($name_data->authors_string_html_s) ? $name_data->authors_string_html_s: null;
+       
+        $this->familyName = isset($name_data->placed_in_family_s) ? $name_data->placed_in_family_s : null;
         
-        isset($name_data->scientificNameAuthorship_s) ? $this->authorship = $name_data->scientificNameAuthorship_s: $this->authorship = null;
+        if($name_data->rank_s == 'genus'){
+            // it is a genus so we set the name
+            $this->genusName = isset($name_data->name_string_s) ? $name_data->name_string_s : null;
+        }else{
+            // it is not a genus so we set the genus part if there is one
+            $this->genusName = isset($name_data->genus_string_s) ? $name_data->genus_string_s : $this->genusName = null;
+        }
         
-        isset($name_data->scientificNameAuthorship_html_s) ? $this->authorshipHtml = $name_data->scientificNameAuthorship_html_s: $this->authorshipHtml = null;
-        
-        isset($name_data->family_s) ? $this->familyName = $name_data->family_s : $this->familyName = null;
-        isset($name_data->genus_s) ? $this->genusName = $name_data->genus_s : $this->genusName = null;
-        isset($name_data->specificEpithet_s) ? $this->specificEpithet = $name_data->specificEpithet_s : $this->specificEpithet = null;
-        isset($name_data->namePublishedIn_s) ? $this->publicationCitation = $name_data->namePublishedIn_s : $this->publicationCitation = null;
-        isset($name_data->namePublishedInID_s) ? $this->publicationID = $name_data->namePublishedInID_s : $this->publicationID = null;
-        isset($name_data->scientificNameID_s) ? $this->nomenclatorID = $name_data->scientificNameID_s : $this->nomenclatorID = null;
+        if($name_data->rank_s == 'species'){
+            // it is a species so we set the name
+            $this->specificEpithet = isset($name_data->name_string_s) ? $name_data->name_string_s : null;
+        }else{
+            // it is maybe below species so we specific epithet
+            $this->specificEpithet = isset($name_data->species_string_s) ? $name_data->species_string_s : null;
+        }
 
-        isset($name_data->taxonRank_s) ? $this->rank = ucwords(strtolower(trim($name_data->taxonRank_s, " \t\n\r,."))) : $this->taxonRank_s = null;
-        if(!in_array($this->rank, $this->ranks)) $this->rank = 'Unrecognised';
+        $this->publicationCitation = isset($name_data->citation_micro_s) ? $name_data->citation_micro_s : null;
+
+        $this->publicationID = null; // FIXME: Version 2
+
+        $this->nomenclatorID = null; 
+        if(isset($name_data->identifiers_other_kind_ss)){
+            for ($i=0; $i < count($name_data->identifiers_other_kind_ss); $i++) { 
+              $kind = $name_data->identifiers_other_kind_ss[$i];
+              if($kind == 'ipni' || $kind == 'tropicos'){
+                $this->nomenclatorID = $name_data->identifiers_other_value_ss[$i];
+                break;
+              }
+            }
+        }
+
+        $this->rank = isset($name_data->rank_s) ?  $name_data->rank_s : null;
 
         // and bool
-        $this->currentPreferredUsageIsSynonym = $name_data->currentPreferredUsageIsSynonym;
-
-        // convenience method let's build a full name string with italics - yet again.
-        $full_name = "";
-        
-        if($this->name){
-
-            // this is tricky because data can be so dirty
-            $parts = explode(' ', $this->name);
-            switch (count($parts)) {
-                case 1:
-                    // if it is a genus it is italics otherwise it is above genus
-                    if($this->rank == 'Genus'){
-                        $full_name .= "<i>" . $this->name . "</i>";
-                    }else{
-                        $full_name .= $this->name;
-                    }
-                    break;
-                
-                case 2:
-                    // binomials are always species or subdivisions of genera so italics
-                    $full_name .= "<i>" . $this->name . "</i>";
-                    break;
-
-                case 3:
-                    // trinomials shouldn't exist because they should have a rank in them
-                    // but lets guess they are below genus.
-                    $full_name .= "<i>" . $this->name . "</i>";
-                    break;
-
-                case 4:
-                    // trinomials with a rank! 
-                    $full_name .= "<i>{$parts[0]} {$parts[1]}</i> {$parts[2]} <i>{$parts[3]}</i>";
-                    break;
-
-                default:
-                    // have no idea what is happening here so fail safe
-                    $full_name .= $this->name;
-                    break;
-            }
-
-        } 
-        
-        if($this->authorship) $full_name .= " " . $this->authorship;
-        
-        $this->fullNameString = $full_name;
+        $this->currentPreferredUsageIsSynonym = $name_data->role_s == 'synonym';
 
 
     }
@@ -142,8 +91,8 @@ class TaxonName{
 
         // get the different versions of this taxon
         $query = array(
-            'query' => 'taxonID_s:' . $name_id,
-            'sort' => 'snapshot_version_s asc'
+            'query' => 'wfo_id_s:' . $name_id,
+            'sort' => 'classification_id_s asc'
         );
         $response = json_decode(solr_run_search($query));
 
@@ -167,10 +116,10 @@ class TaxonName{
             
         }
 
-        if($latest_usage->taxonomicStatus_s == 'Synonym'){
+        if($latest_usage->role_s == 'synonym'){
             // if it is a not accepted link to the accepted taxon
             if(isset($latest_usage->acceptedNameUsageID_s)){
-                $accepted_taxon_id = $latest_usage->acceptedNameUsageID_s . '-' . $latest_usage->snapshot_version_s;
+                $accepted_taxon_id = $latest_usage->acceptedNameUsageID_s . '-' . $latest_usage->classification_id_s;
                 $name_data['currentPreferredUsage'] = $accepted_taxon_id;
                 $name_data['currentPreferredUsageIsSynonym'] = true;
             }
@@ -184,6 +133,7 @@ class TaxonName{
         $name_data['id'] = $name_id;
 
         return new TaxonName((object)$name_data);
+
     }
 
     public static function getByMatching($name_string, $authors_string ){
@@ -193,35 +143,35 @@ class TaxonName{
         $words = preg_split('/[\s,.]+/', $name_string);
 
         $filters = array();
-        $filters[] = 'snapshot_version_s:' . WFO_DEFAULT_VERSION;
+        $filters[] = 'classification_id_s:' . WFO_DEFAULT_VERSION;
 
         switch (count($words)) {
 
             // One word - names of genus and above.
             case 1:
-                $filters[] = 'scientificName_s:' . $words[0];
+                $filters[] = 'full_name_string_alpha_s:' . $words[0];
                 break;
             
             // Two words is species
             case 2:
-                $filters[] = 'scientificName_s:' . implode(' ', $words);
-                $filters[] = 'genus_s:' . $words[0];
+                $filters[] = 'full_name_string_alpha_s:' . implode(' ', $words);
+                $filters[] = 'genus_string_s:' . $words[0];
                 $filters[] = '-infraspecificEpithet_s:["" TO *]';// empty infraspecific
                 break;
 
             // Three words is subspecific
             case 3:
-                $filters[] = 'genus_s:' . $words[0];
-                $filters[] = 'specificEpithet_s:' . $words[1];
-                $filters[] = 'infraspecificEpithet_s:' . $words[2];
+                $filters[] = 'genus_string_s:' . $words[0];
+                $filters[] = 'species_string_s:' . $words[1];
+                $filters[] = 'name_string_s:' . $words[2];
                 break;
 
             // Four words is subspecific with rank between species 
             // and subspecific part
             case 2:
-                $filters[] = 'genus_s:' . $words[0];
-                $filters[] = 'specificEpithet_s:' . $words[1];
-                $filters[] = 'infraspecificEpithet_s:' . $words[3];
+                $filters[] = 'genus_string_s:' . $words[0];
+                $filters[] = 'species_string_s:' . $words[1];
+                $filters[] = 'name_string_s:' . $words[3];
                 break;
 
             // abject failure
@@ -243,7 +193,7 @@ class TaxonName{
         $response = json_decode(solr_run_search($query));
 
         foreach ($response->response->docs as $usage) {
-            $matching_names[] = TaxonName::getById($usage->taxonID_s);
+            $matching_names[] = TaxonName::getById($usage->wfo_id_s);
         }
 
         // FIXME - add author filter.
@@ -278,8 +228,8 @@ class TaxonName{
             // just do a generic string search
             $query = array(
                 'query' => "_text_:$terms",
-                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
-                'sort' => 'scientificName_s asc',
+                'filter' => 'classification_id_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'full_name_string_alpha_t_sort asc',
                 'limit' => $limit,
                 'offset' => $offset
             );
@@ -291,9 +241,9 @@ class TaxonName{
             $name = $name . "*";
 
             $query = array(
-                'query' => "scientificName_s:$name",
-                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
-                'sort' => 'scientificName_s asc',
+                'query' => "full_name_string_alpha_s:$name",
+                'filter' => 'classification_id_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'full_name_string_alpha_t_sort asc',
                 'limit' => $limit,
                 'offset' => $offset
             );
@@ -313,7 +263,7 @@ class TaxonName{
             for ($i=0; $i < count($response->response->docs); $i++) { 
             
                 $doc = $response->response->docs[$i];
-                $names[$doc->taxonID_s] = TaxonName::getById($doc->taxonID_s);
+                $names[$doc->wfo_id_s] = TaxonName::getById($doc->wfo_id_s);
 
             }
         }

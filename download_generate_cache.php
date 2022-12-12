@@ -34,11 +34,11 @@ function generate_archives_for($rank, $version){
     $query = array(
         'query' => 'taxonRank_s:' . $rank, 
         'filter' => array(
-            'snapshot_version_s:' . $version,
-            'taxonomicStatus_s:Accepted'
+            'classification_id_s:' . $version,
+            'role_s:accepted'
         ),
         'limit' => 1000000,
-        'sort' => 'scientificName_s asc'
+        'sort' => 'full_name_string_alpha_t_sort asc'
     );
     print_r($query);
 
@@ -47,7 +47,7 @@ function generate_archives_for($rank, $version){
 
     if($response->response->numFound > 0){
         foreach ($response->response->docs as $taxon){
-            echo $taxon->scientificName_s;
+            echo $taxon->full_name_string_alpha_s;
             echo "\n";
             process_taxon($taxon);
         }   

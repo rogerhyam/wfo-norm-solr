@@ -166,6 +166,7 @@ $schema = new Schema([
 
 $rawInput = file_get_contents('php://input');
 
+
 if(!trim($rawInput)){
     echo "<h1>WFO Plant List GraphQL Endpoint</h1>";
     echo "<p>You don't seem to have given us a query to work with. Please use a GraphQL client to pass query info.</p>";
@@ -173,6 +174,7 @@ if(!trim($rawInput)){
 }
 
 $input = json_decode($rawInput, true);
+error_log($rawInput);
 $query = $input['query'];
 $variableValues = isset($input['variables']) ? $input['variables'] : null;
 
@@ -190,7 +192,14 @@ try {
         ]
     ];
 }
+
+// monitor input for testing
+$output_json = json_encode($output);
+$log_out = fopen('cache/query_log.json', 'a');
+fwrite($log_out, "[$rawInput,$output_json],\n"); // two objects in an array.
+fclose($log_out);
+
 header('Content-Type: application/json');
-echo json_encode($output);
+echo $output_json;
 
 

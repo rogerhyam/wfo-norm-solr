@@ -32,20 +32,23 @@ class TaxonConcept{
 
         // add self to the list of created docs
         $this->id = $solr_doc->id;
-        $this->title = "TaxonConcept: " . $solr_doc->id . " " . $solr_doc->scientificName_s;
+        $this->title = "TaxonConcept: " . $solr_doc->id . " " . $solr_doc->full_name_string_plain_s;
         $this->guid = get_uri($this->id);
         $this->web = 'http://www.worldfloraonline.org/taxon/' . substr($this->id, 0, 14);
-        $this->classification = Classification::getById($solr_doc->snapshot_version_s);
+        $this->classification = Classification::getById($solr_doc->classification_id_s);
         $this->solr_doc = $solr_doc;
 
         self::$loaded[$this->id] = $this;
 
-        if(property_exists($solr_doc, "taxonomicStatus_s")){
-            $this->editorialStatus =  $solr_doc->taxonomicStatus_s;
+        if(property_exists($solr_doc, "role_s")){
+            if($solr_doc->role_s == 'unplaced'){
+                $this->editorialStatus =  "unchecked";
+            }else{
+                $this->editorialStatus = $solr_doc->role_s;
+            }
         }else{
             $this->editorialStatus =  "unchecked";
         }
-        
 
         $this->hasName = null;
         $this->hasPart = null;
@@ -54,7 +57,7 @@ class TaxonConcept{
 
         // replacement relationships are populated as strings
         // initially
-        $this->replacement_relations = get_replaces_replaced($solr_doc->taxonID_s, $solr_doc->snapshot_version_s);
+        $this->replacement_relations = get_replaces_replaced($solr_doc->wfo_id_s, $solr_doc->classification_id_s);
 
     }
 
@@ -85,8 +88,7 @@ class TaxonConcept{
         if($this->partsCount !== -1) return $this->partsCount;
 
         $query = array(
-            'query' => 'parentNameUsageID_s:' . substr($this->id, 0, 14),
-            'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
+            'query' => 'parent_id_s:' . $this->solr_doc->id,
             'fields' => 'id',
             'limit' => 0,
             'offset' => 0,
@@ -106,11 +108,10 @@ class TaxonConcept{
         $this->hasPart = array();
 
         $query = array(
-            'query' => 'parentNameUsageID_s:' . substr($this->id, 0, 14),
-            'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
+            'query' => 'parent_id_s:' . $this->solr_doc->id,
             'fields' => 'id',
             'offset' => $offset,
-            'sort' => 'scientificName_s asc'
+            'sort' => 'full_name_string_alpha_t_sort asc'
         );
 
         // -1 is unlimited but in Solr you just miss the parameter 
@@ -120,11 +121,84 @@ class TaxonConcept{
 
         $response = json_decode(solr_run_search($query));
         //error_log(print_r($response, true));
-        if($response->response->numFound > 0){
-            foreach ($response->response->docs as $kid) {
-                $this->hasPart[] = TaxonConcept::getById($kid->id);
+
+        if(isset($response->response->numFound)){
+            foreach ($response->response->docs as $doc) {
+                $this->hasPart[] = TaxonConcept::getById($doc->id);
             }
         }
+
+        // Where are the unplaced names!
+        /*  
+            if we are a genus then it is simply the ones
+            with the same genus name as us who are unplaced
+        */
+
+        if($this->solr_doc->rank_s == 'genus'){
+
+            $query = array(
+                'query' => 'genus_string_s:' . $this->solr_doc->name_string_s,
+                'filter' => 'role_s:unplaced',
+                'fields' => 'id',
+                'offset' => $offset,
+                'sort' => 'full_name_string_alpha_t_sort asc'
+            );
+
+
+            // -1 is unlimited but in Solr you just miss the parameter 
+            if($limit >= 0){
+                $query['limit'] = $limit;
+            }
+
+            $response = json_decode(solr_run_search($query));
+            //error_log(print_r($response, true));
+
+            if(isset($response->response->numFound)){
+                foreach ($response->response->docs as $doc) {
+                    $this->hasPart[] = TaxonConcept::getById($doc->id);
+                }
+            }
+
+        }
+
+        // ditto subspecific names
+        if($this->solr_doc->rank_s == 'species'){
+
+            $query = array(
+                'query' => 'species_string_s:' . $this->solr_doc->name_string_s,
+                'filter' => 'role_s:unplaced',
+                'fields' => 'id',
+                'offset' => $offset,
+                'sort' => 'full_name_string_alpha_t_sort asc'
+            );
+
+
+            // -1 is unlimited but in Solr you just miss the parameter 
+            if($limit >= 0){
+                $query['limit'] = $limit;
+            }
+
+            $response = json_decode(solr_run_search($query));
+            //error_log(print_r($response, true));
+
+            if(isset($response->response->numFound)){
+                foreach ($response->response->docs as $doc) {
+                    $this->hasPart[] = TaxonConcept::getById($doc->id);
+                }
+            }
+
+        }
+
+        /*
+            if we are a family then we are interested in genera alone
+            - but how to find them?
+
+            // get all the species that are synonyms in the family
+            // get their genus names
+            // any of them that are unplaced?
+
+            // FIXME - or maybe not
+        */
 
         return $this->hasPart;
         
@@ -133,8 +207,8 @@ class TaxonConcept{
     public function getIsPartOf(){
 
         if($this->isPartOf === null){
-            if(isset($this->solr_doc->parentNameUsageID_s)){
-                $parent = solr_get_doc_by_id($this->solr_doc->parentNameUsageID_s . '-' . $this->solr_doc->snapshot_version_s);
+            if(isset($this->solr_doc->parent_id_s)){
+                $parent = solr_get_doc_by_id($this->solr_doc->parent_id_s);
                 if($parent){
                    $this->isPartOf = TaxonConcept::getById($parent->id);
                 }
@@ -183,16 +257,15 @@ class TaxonConcept{
         $this->synonyms = array();
 
         $query = array(
-            'query' => 'acceptedNameUsageID_s:' . $this->solr_doc->taxonID_s, 
-            'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
+            'query' => 'accepted_id_s:' . $this->solr_doc->id, 
             'limit' => 1000000,
-            'sort' => 'scientificName_s asc'
+            'sort' => 'full_name_string_alpha_t_sort asc'
         );
         $response = json_decode(solr_run_search($query));
     
         if($response->response->numFound > 0){
             foreach ($response->response->docs as $syn){
-                $this->synonyms[] = TaxonName::getById($syn->taxonID_s);
+                $this->synonyms[] = TaxonName::getById($syn->wfo_id_s);
             }   
         }
 
@@ -207,8 +280,8 @@ class TaxonConcept{
             // just do a generic string search
             $query = array(
                 'query' => "_text_:$terms",
-                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
-                'sort' => 'scientificName_s asc',
+                'filter' => 'classification_id_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'full_name_string_alpha_t_sort asc',
                 'limit' => $limit,
                 'offset' => $offset
             );
@@ -220,9 +293,9 @@ class TaxonConcept{
             $name = $name . "*";
 
             $query = array(
-                'query' => "scientificName_s:$name",
-                'filter' => 'snapshot_version_s:' . WFO_DEFAULT_VERSION,
-                'sort' => 'scientificName_s asc',
+                'query' => "full_name_string_alpha_s:$name",
+                'filter' => 'classification_id_s:' . WFO_DEFAULT_VERSION,
+                'sort' => 'full_name_string_alpha_t_sort asc',
                 'limit' => $limit,
                 'offset' => $offset
             );
@@ -255,30 +328,30 @@ class TaxonConcept{
         $stats = array();
 
         // we only work with families and genera because of how we generate stuff
-        $rank = $this->solr_doc->taxonRank_lower_s;
+        $rank = $this->solr_doc->rank_s;
         if($rank != 'family' && $rank != 'genus'){
             return $stats;
         }
 
         $query = array(
-            'query' => 'acceptedNameUsageID_s:' . $this->solr_doc->taxonID_s, 
-            'filter' => 'snapshot_version_s:' . $this->solr_doc->snapshot_version_s,
+            'query' => 'acceptedNameUsageID_s:' . $this->solr_doc->wfo_id_s, 
+            'filter' => 'classification_id_s:' . $this->solr_doc->classification_id_s,
             'facet' => array(
                 "rank" => array(
                     "type" => "terms",
-                    "field" => "taxonRank_lower_s",
+                    "field" => "rank_s",
                     'limit' => 1000,
                     'facet' => array(
                         "status" => array(
                             "type" => "terms",
-                            "field" => "taxonomicStatus_s",
+                            "field" => "role_s",
                             'limit' => 1000
                         )
                     )
                 ),
                 "status" => array(
                     "type" => "terms",
-                    "field" => "taxonomicStatus_s",
+                    "field" => "role_s",
                     'limit' => 1000
                 )
             ),
@@ -286,9 +359,9 @@ class TaxonConcept{
         );
 
         if($rank == 'family'){
-            $query['query'] = 'family_s:' .  $this->solr_doc->scientificName_s;
+            $query['query'] = 'family_s:' .  $this->solr_doc->full_name_string_alpha_s;
         }elseif($rank == 'genus'){
-            $query['query'] = 'genus_s:' .  $this->solr_doc->scientificName_s;
+            $query['query'] = 'genus_string_s:' .  $this->solr_doc->full_name_string_alpha_s;
         }else{
             return $stats;
         }

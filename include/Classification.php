@@ -41,30 +41,30 @@ class Classification{
             $query = array(
                 'query' => '*:*',
                 'facet' => array(
-                    'snapshot_version_s' => array(
+                    'classification_id_s' => array(
                         'type' => "terms",
                         'limit' => -1,
                         'mincount' => 1,
                         'missing' => false,
                         'sort' => 'index',
-                        'field' => 'snapshot_version_s'
+                        'field' => 'classification_id_s'
                     )
                 ),
                 'filter' => array(
-                    "taxonomicStatus_s:Accepted" // restrict count to accepted taxa
+                    "role_s:accepted" // restrict count to accepted taxa
                 ),
                 'limit' => 0
             );
             $response = json_decode(solr_run_search($query));
-            //error_log(print_r($response->facets->snapshot_version_s->buckets, true));
+            //error_log(print_r($response->facets->classification_id_s->buckets, true));
 
             // get out of here if there are no classifications!
-            if(!isset($response->facets->snapshot_version_s->buckets)){
+            if(!isset($response->facets->classification_id_s->buckets)){
                 error_log('No classifications found!');
                 return array();
             }
 
-            foreach ($response->facets->snapshot_version_s->buckets as $bucket) {
+            foreach ($response->facets->classification_id_s->buckets as $bucket) {
                 $c = new Classification($bucket->val, $bucket->count);
                 self::$default_classification_id = $c->id; //the last one will be the default
             }
@@ -116,9 +116,9 @@ class Classification{
         $query = array(
             'query' => '*:*',
             'filter' => array(
-                "taxonomicStatus_s:Accepted",
-                "snapshot_version_s:{$this->id}",
-                "taxonRank_lower_s:phylum"
+                "role_s:accepted",
+                "classification_id_s:{$this->id}",
+                "rank_s:phylum"
             ),
             'fields' => array('id'),
             'limit' => 100

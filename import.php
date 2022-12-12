@@ -7,7 +7,7 @@ require_once('include/AuthorTeam.php');
 
 /* useful curl commands to clean things up
 
- curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"snapshot_version_s:2022-06"} }' --user wfo:****
+ curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"delete":{"query":"classification_id_s:2022-06"} }' --user wfo:****
  curl -X POST -H 'Content-Type: application/json' 'http://localhost:8983/solr/wfo/update' --data-binary '{"commit":{} }' --user wfo:****
 
 */
@@ -91,7 +91,7 @@ while($row = fgetcsv($file, 2500, "\t")){
     $solr_doc = array();
 
     // we tag each record with the version
-    $solr_doc['snapshot_version_s'] = $version;
+    $solr_doc['classification_id_s'] = $version;
     $solr_doc['solr_import_dt'] = date('Y-m-d\Th:i:s\Z');
 
     // work through the fields
@@ -101,7 +101,7 @@ while($row = fgetcsv($file, 2500, "\t")){
         $field = $fields[$i];
         $val = trim($row[$i]);
 
-        // we need to fix capitalization in the taxonomicStatus_s field 
+        // we need to fix capitalization in the role_s field 
         // because it has become unreliable.
         if($field == 'taxonomicStatus'){
             $val = ucfirst( strtolower( trim($val) ) );
@@ -139,7 +139,7 @@ while($row = fgetcsv($file, 2500, "\t")){
     $solr_doc['scientificNameAuthorship_ids_ss'] = $authorTeam->getAuthorIds();
 
     // rank as lowercase for stats
-    $solr_doc['taxonRank_lower_s'] = strtolower($row[array_search('taxonRank', $fields)]);
+    $solr_doc['rank'] = strtolower($row[array_search('taxonRank', $fields)]);
 
     // we save the name as a path so we can search on it.
     // get get species and subspecific taxa

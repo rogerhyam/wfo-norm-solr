@@ -46,7 +46,7 @@ if(!$taxon){
 }
 
 // is the taxon an accepted one?
-if(strtolower($taxon->taxonomicStatus_s) != 'accepted'){
+if(strtolower($taxon->role_s) != 'accepted'){
     http_response_code(400);
     echo "Bad request. Downloads only available for accepted taxa.";
     exit;

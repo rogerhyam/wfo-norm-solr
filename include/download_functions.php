@@ -1,6 +1,10 @@
 <?php
 
-
+/**
+ * 
+ * 
+ * @param taxon is a solr doc
+ */
 function process_taxon($taxon){
 
     $cache_path = get_cache_path($taxon);
@@ -81,8 +85,7 @@ function create_csv_file($taxon, $file){
 
     // write synonyms to file
     $query = array(
-        'query' => 'acceptedNameUsageID_s:' . $taxon->taxonID_s, 
-        'filter' => 'snapshot_version_s:' . $taxon->snapshot_version_s,
+        'query' => 'accepted_id_s:' . $taxon->id,
         'limit' => 1000000,
         'sort' => 'id asc'
     );
@@ -90,15 +93,13 @@ function create_csv_file($taxon, $file){
 
     if($response->response->numFound > 0){
         foreach ($response->response->docs as $syn){
-            add_higher_classification($syn, $taxon);
             fputcsv($file, get_csv_row($syn));
         }   
     }
 
     // write children to file
     $query = array(
-        'query' => 'parentNameUsageID_s:' . $taxon->taxonID_s,
-        'filter' => 'snapshot_version_s:' . $taxon->snapshot_version_s,
+        'query' => 'parent_id_s:' . $taxon->id,
         'limit' => 1000000,
         'sort' => 'id asc'
     );
@@ -124,98 +125,54 @@ function get_csv_row($taxon){
     $vals[] = get_uri($taxon->id);
 
     // scientificNameID
-    $vals[] = isset($taxon->taxonID_s) ? get_uri($taxon->taxonID_s) : "";
+    $vals[] = isset($taxon->wfo_id_s) ? get_uri($taxon->wfo_id_s) : "";
 
     // taxonomicStatus
-    $vals[] = isset($taxon->taxonomicStatus_s) ? strtolower($taxon->taxonomicStatus_s) : "";
+    $vals[] = isset($taxon->role_s) ? strtolower($taxon->role_s) : "";
 
-    // parentNameUsageID_s
-    $vals[] = isset($taxon->parentNameUsageID_s) ? get_uri($taxon->parentNameUsageID_s . '-' . $taxon->snapshot_version_s) : "";
+    // parent_id_s
+    $vals[] = isset($taxon->parent_id_s) ? get_uri($taxon->parent_id_s) : "";
 
     // acceptedNameUsageID
-    $vals[] = isset($taxon->acceptedNameUsageID_s) ? get_uri($taxon->acceptedNameUsageID_s . '-' . $taxon->snapshot_version_s) : "";
+    $vals[] = isset($taxon->accepted_id_s) ? get_uri($taxon->accepted_id_s) : "";
 
     // taxonRank_s
-    $vals[] = isset($taxon->taxonRank_s) ? strtolower($taxon->taxonRank_s ) : "";
+    $vals[] = isset($taxon->rank_s) ? $taxon->rank_s : "";
 
     // scientificName
-    $vals[] = isset($taxon->scientificName_s) ? $taxon->scientificName_s : "";
+    $vals[] = isset($taxon->full_name_string_plain_s) ? $taxon->full_name_string_plain_s : "";
 
     // scientificNameAuthorship
-    $vals[] = isset($taxon->scientificNameAuthorship_s) ? $taxon->scientificNameAuthorship_s : "";
+    $vals[] = isset($taxon->authors_string_s) ? $taxon->authors_string_s : "";
 
     // namePublishedIn_s
-    $vals[] = isset($taxon->namePublishedIn_s) ? $taxon->namePublishedIn_s : "";
+    $vals[] = isset($taxon->citation_micro_s) ? $taxon->citation_micro_s : "";
 
     // nameAccordingToID_s - N.B. not using value from WFO but going straight to source
-    $vals[] = isset($taxon->references_s) ? $taxon->references_s : "";
+    // FIXME - the meaning of this is ambiguous so excluding for now
+    $vals[] = ""; // isset($taxon->references_s) ? $taxon->references_s : "";
 
     // specificEpithet
-    $vals[] = isset($taxon->specificEpithet_s) ? $taxon->specificEpithet_s : "";
-
-    // infraspecificEpithet
-    $vals[] = isset($taxon->infraspecificEpithet_s) ? $taxon->infraspecificEpithet_s : "";
-
-    // higherClassification
-    $lineage = array();
-    if(isset($taxon->higherClassification)){
-        foreach ($taxon->higherClassification as $place) {
-            $lineage[$place['rank']] = $place['name'];
-        }
-        $vals[] = implode(';', array_values($lineage));
+    if($taxon->rank_s == 'species'){
+        $vals[] = isset($taxon->name_string_s) ? $taxon->name_string_s : "";
     }else{
-        $vals[] = ""; // higherClassification
+        $vals[] = isset($taxon->species_string_s) ? $taxon->species_string_s : "";
+    }
+    
+    if(isset($taxon->species_string_s)){
+        // we are below species
+        $vals[] = isset($taxon->name_string_s) ? $taxon->name_string_s : "";
     }
 
-    $vals[] = isset($lineage['kingdom']) ? $lineage['kingdom'] : "Plantae";
-    $vals[] = isset($lineage['phylum']) ? $lineage['phylum'] : "";
-    $vals[] = isset($lineage['class']) ? $lineage['class'] : "";
-    $vals[] = isset($lineage['order']) ? $lineage['order'] : "";
-    $vals[] = isset($lineage['family']) ? $lineage['family'] : "";
-    $vals[] = isset($lineage['genus']) ? $lineage['genus'] : "";
-    $vals[] = isset($lineage['subgenus']) ? $lineage['subgenus'] : "";
-
+    $vals[] = isset($taxon->placed_in_kingdom_s) ? $taxon->placed_in_kingdom_s : "Plantae"; // don't think this will ever be set
+    $vals[] = isset($taxon->placed_in_phylum_s) ? $taxon->placed_in_phylum_s : "";
+    $vals[] = isset($taxon->placed_in_class_s) ? $taxon->placed_in_class_s : "";
+    $vals[] = isset($taxon->placed_in_order_s) ? $taxon->placed_in_order_s : "";
+    $vals[] = isset($taxon->placed_in_family_s) ? $taxon->placed_in_family_s : "";
+    $vals[] = isset($taxon->placed_in_genus_s) ? $taxon->placed_in_genus_s : "";
+    $vals[] = isset($taxon->placed_in_subgenus_s) ? $taxon->placed_in_subgenus_s : "";
 
     return $vals;
-}
-
-function add_higher_classification($kid, $parent){
-
-    // if we don't have the tail to the top yet
-    // we have to build it
-    if(!isset($parent->higherClassification)){
-        $parent->higherClassification = build_higher_classification($parent, array());
-    }
-
-    $kid->higherClassification = $parent->higherClassification;
-    $kid->higherClassification[] = array(
-            "rank" => strtolower($parent->taxonRank_s),
-            "name" => $parent->scientificName_s
-    );
-
-
-}
-
-function build_higher_classification($taxon, $lineage){
-
-    // have we reached the top of the pile?
-    if(!isset($taxon->parentNameUsageID_s)) return $lineage;
-
-    // get the parent and add it on the beginning
-    $parent = solr_get_doc_by_id($taxon->parentNameUsageID_s . '-' . $taxon->snapshot_version_s);
-    if(!$parent) return $lineage;
-
-    $place = array(
-            "rank" => strtolower($parent->taxonRank_s),
-            "name" => $parent->scientificName_s
-    );
-
-    array_unshift($lineage, $place);
-
-    return build_higher_classification($parent, $lineage);
- 
-    // repeat for the next parent
-
 }
 
 function get_cache_path($taxon){

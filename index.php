@@ -92,9 +92,9 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
     // if a wfo "taxon" is sunk it isn't a taxon it is a name.
     // we wouldn't publish these links or expect people to arrive here
     // but just in case.
-    if($taxon_solr->taxonomicStatus_s == 'Synonym'){
+    if($taxon_solr->role_s == 'synonym'){
 
-        $redirect_url = get_uri($taxon_solr->acceptedNameUsageID_s . '-' . $taxon_solr->snapshot_version_s);
+        $redirect_url = get_uri($taxon_solr->accepted_id_s);
         header("Location: $redirect_url",TRUE,303);
         echo "See Other: The accepted taxon for this name";
         exit;
@@ -110,8 +110,8 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
 
   
     // taxonomic status mixes synonymy and editorial so make it pure!
-    if(!preg_match('/Synonym/', $taxon_solr->taxonomicStatus_s)){
-        $taxon_rdf->set('wfo:editorialStatus', $taxon_solr->taxonomicStatus_s);
+    if(!preg_match('/Synonym/', $taxon_solr->role_s)){
+        $taxon_rdf->set('wfo:editorialStatus', $taxon_solr->role_s);
     }
 
     // Insert the name
@@ -121,15 +121,14 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
     $taxon_rdf->add('wfo:classification', $graph->resource(get_uri($version_id)) );
 
     // Link out to other taxonomies
-    $replaces_replaced = get_replaces_replaced($wfo_root_id, $taxon_solr->snapshot_version_s);
+    $replaces_replaced = get_replaces_replaced($taxon_solr->wfo_id_s, $version_id);
     foreach($replaces_replaced as $property => $uri){
         $taxon_rdf->add($property, $graph->resource($uri));
     }
     
-
     // add parent taxon
-    if(isset($taxon_solr->parentNameUsageID_s)){
-        $parent = solr_get_doc_by_id($taxon_solr->parentNameUsageID_s . '-' . $taxon_solr->snapshot_version_s);
+    if(isset($taxon_solr->parent_id_s)){
+        $parent = solr_get_doc_by_id($taxon_solr->parent_id_s);
         if($parent){
             //$taxon_rdf->add('dwc:parentNameUsageID',$graph->resource(get_uri($parent->id)) );
             $taxon_rdf->add('dc:isPartOf',$graph->resource(get_uri($parent->id)) );
@@ -138,8 +137,7 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
 
     // add child taxa
     $query = array(
-        'query' => 'parentNameUsageID_s:' . $wfo_root_id,
-        'filter' => 'snapshot_version_s:' . $taxon_solr->snapshot_version_s,
+        'query' => 'parent_id_s:' . $taxon_solr->id,
         'fields' => 'id',
         'limit' => 1000000,
         'sort' => 'id asc'
@@ -153,17 +151,15 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
 
     // add synonymous taxa
     $query = array(
-        'query' => 'acceptedNameUsageID_s:' . $wfo_root_id,
-        'filter' => 'snapshot_version_s:' . $taxon_solr->snapshot_version_s,
+        'query' => 'acceptedNameUsageID_s:' . $taxon_solr->id,
         'limit' => 1000000,
-        'sort' => 'snapshot_version_s asc'
+        'sort' => 'classification_id_s asc'
     );
     $response = json_decode(solr_run_search($query));
 
     if($response->response->numFound > 0){
         foreach ($response->response->docs as $syn){
-//            $syn_uri = get_uri($syn->taxonID_s);
-            $taxon_rdf->add('wfo:hasSynonym',  getTaxonNameResource($graph, $syn->taxonID_s) );
+            $taxon_rdf->add('wfo:hasSynonym',  getTaxonNameResource($graph, $syn->id) );
         }   
     }
 
@@ -202,53 +198,33 @@ function output($graph, $format_string){
 
 }
 
-function getTaxonNameResource($graph, $wfo_root_id){
+function getTaxonNameResource($graph, $wfo_id){
 
-    $name = $graph->resource(get_uri($wfo_root_id), 'wfo:TaxonName');
+    $name = $graph->resource(get_uri($wfo_id), 'wfo:TaxonName');
 
-    // get the different versions of this taxon
-    $query = array(
-        'query' => 'taxonID_s:' . $wfo_root_id,
-        'sort' => 'snapshot_version_s asc'
-    );
-    $response = json_decode(solr_run_search($query));
+    // the name is always the latest version we have in the index.
+    $solr_doc = solr_get_doc_by_id($wfo_id . '-' . WFO_DEFAULT_VERSION);
 
-    // FROM HERE - build nomenclatural data from all the records, latest overriding older 
-    // data - to handle them dropping info between TENs sources
-
+    // fields we will use
     $nom_fields = array(
-        'taxonRank_s' => 'wfo:rank',
-        'scientificName_s' => 'wfo:fullName',
-        'scientificNameAuthorship_s' => 'wfo:authorship',
-        'scientificNameAuthorship_ids_ss' => 'dc:creator',
-        'family_s' => 'wfo:familyName',
-        'genus_s' => 'wfo:genusName',
-        'specificEpithet_s' => 'wfo:specificEpithet',
-        'namePublishedIn_s' => 'wfo:publicationCitation',
-        'namePublishedInID_s' => 'wfo:publicationID',
-        'scientificNameID_s' => 'wfo:nameID',
-        'originalNameUsageID_s' => 'wfo:hasBasionym'
+        'rank_s' => 'wfo:rank',
+        'full_name_string_plain_s' => 'wfo:fullName',
+        'authors_string_s' => 'wfo:authorship',
+        'authors_string_s' => 'dc:creator',
+        'placed_in_family_s' => 'wfo:familyName',
+        'placed_in_genus_s' => 'wfo:genusName',
+        'species_string_s' => 'wfo:specificEpithet',
+        'citation_micro_s' => 'wfo:publicationCitation',
+        'wfo_id_s' => 'wfo:nameID',
+        'basionym_id_s' => 'wfo:hasBasionym'
     );
 
     $nom_values = array();
-
-    $usages = array();
-
-    // create a map of the latest values
-    $latest_usage = null;
-    foreach ($response->response->docs as $usage) {
-        
-        foreach($nom_fields as $solr_field => $rdf_prop){
-            if(isset($usage->{$solr_field})){
-                $nom_values[$rdf_prop] = $usage->{$solr_field};
-            }
+    foreach($nom_fields as  $solr_field => $rdf_prop){
+        if(isset($solr_doc->{$solr_field})){
+            $nom_values[$rdf_prop] = $solr_doc->{$solr_field};
         }
-
-        $usages[] = $usage; 
-        $latest_usage = $usage;
-
     }
-
 
     // add the mapped values to the name graph doc
     foreach($nom_values as $rdf_prop => $value){
@@ -272,16 +248,29 @@ function getTaxonNameResource($graph, $wfo_root_id){
             }
             
         }
+    }
 
-        
+    // add a list of usages of this name
+    $query = array(
+        'query' => 'wfo_id_s:' . $wfo_id,
+        'sort' => 'classification_id_s asc'
+    );
+    $response = json_decode(solr_run_search($query));
+
+    // create a map of the latest values
+    $latest_usage = null;
+    $usages = array();
+    foreach ($response->response->docs as $usage) {
+        $usages[] = $usage; 
+        $latest_usage = $usage;
     }
 
     foreach($usages as $usage){
 
         // a usage is in a taxon, either as
-        if($usage->taxonomicStatus_s == 'Synonym'){
-            if(isset($usage->acceptedNameUsageID_s)){
-                $name->add('wfo:isSynonymOf', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+        if($usage->role_s == 'synonym'){
+            if(isset($usage->accepted_id_s)){
+                $name->add('wfo:isSynonymOf', $graph->resource(get_uri($usage->accepted_id_s)));
             }
         }else{
             $name->add('wfo:acceptedNameFor', $graph->resource(get_uri($usage->id)));
@@ -289,12 +278,12 @@ function getTaxonNameResource($graph, $wfo_root_id){
         
     }
 
-    // the last usage (they are in snapshot order) is the prefered usage
+    // the last usage (they are in snapshot order) is the preferred usage
     if($usages){
         $usage = end($usages);
-        if($usage->taxonomicStatus_s == 'Synonym'){
+        if($usage->role_s == 'synonym'){
             if(isset($usage->acceptedNameUsageID_s)){
-                $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->acceptedNameUsageID_s . '-' . $usage->snapshot_version_s )));
+                $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->accepted_id_s)));
             }
         }else{
             $name->add('wfo:currentPreferredUsage', $graph->resource(get_uri($usage->id)));
