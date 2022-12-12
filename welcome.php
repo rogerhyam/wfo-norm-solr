@@ -61,10 +61,12 @@ $formats = \EasyRdf\Format::getFormats();
     Objects and properties are defined by URIs in the Semantic Web interface and in the GraphQL documentation.
 </p>
 
-<p  class="alert" >
-    <strong>Status:</strong> This service is still under development and should not be considered stable. Please enjoy exploring it. If you are interested in using it 
-    in a production system please contact Roger Hyam <a href="rhyam@rbge.org.uk">rhyam@rbge.org.uk</a> and register your interest.
-    We will then be able to freeze features that are needed by live systems. We'd also welcome any feedback you might have.
+<p >
+    <strong>Status:</strong> 
+    This service is now live. If you are using it in a production system please let Roger Hyam <a href="rhyam@rbge.org.uk">rhyam@rbge.org.uk</a> know 
+    so we can keep you informed of status updates. 
+    We are refactoring the code over the winter of 2022/23 which shouldn't introduce breaking changes but let us know if it does.
+    We'd welcome any feedback you might have.
 </p>
 
 <h2>Data Model</h2>
@@ -105,7 +107,7 @@ and these identifiers.
 </p>
 
 <p>
-<strong>TaxonConcepts</strong> identifiers take the form <a href="<?php echo get_uri('wfo-0001048237-2019-05') ?>" ><?php echo get_uri('wfo-0001048237-2019-05') ?></a>. The final part of the URI is a name identifier 
+<strong>TaxonConcepts</strong> identifiers take the form <a href="<?php echo get_uri('wfo-0001048237-2022-12') ?>" ><?php echo get_uri('wfo-0001048237-2022-12') ?></a>. The final part of the URI is a name identifier 
 qualified by a classification version. The version format is the year followed by the two digit month. 
 </p>
 
@@ -114,11 +116,11 @@ Note that although the format of identifiers is described here (because it is us
 but treat them as opaque strings. An example of how this can go wrong is that not every name has an associated taxon in every classification.
 If a TaxonName's role within a classification is as a synonym there is no associated taxon in that classification.
 The name <a href="<?php echo get_uri('wfo-0000615907') ?>" ><?php echo get_uri('wfo-0000615907') ?></a> (<i>Comandra elliptica</i> Raf.)
-Is a synonym in the classification 2019-05.
+Is a synonym in the classification 2022-12.
 If you were to create the taxon URI 
-<a style="color: red" href="<?php echo get_uri('wfo-0000615907-2019-05') ?>" ><?php echo get_uri('wfo-0000615907-2019-05') ?></a> by tagging the version id on the end
+<a style="color: red" href="<?php echo get_uri('wfo-0000615907-2022-12') ?>" ><?php echo get_uri('wfo-0000615907-2022-12') ?></a> by tagging the version id on the end
 and try to retrieve data you would currently be redirect to the taxon 
-<a href="<?php echo get_uri('wfo-0000615918-2019-05') ?>" ><?php echo get_uri('wfo-0000615918-2019-05') ?></a> (<i>Comandra umbellata</i> (L.) Nutt.)
+<a href="<?php echo get_uri('wfo-0000615918-2022-12') ?>" ><?php echo get_uri('wfo-0000615918-2022-12') ?></a> (<i>Comandra umbellata</i> (L.) Nutt.)
 in which <i>Comandra elliptica</i> Raf. is a synonym.
 This behaviour is technically wrong and may change to returning a HTTP 400 Bad Request or something else in future.
 If you were to use the created URI in a web browser you would be redirected to the synonyms page in the website.
@@ -195,7 +197,7 @@ foreach($formats as $format_name => $format){
 </table>
 
 <p>An example graph for a TaxonConcept</p>
-<a href="/wfo-4000000718-2019-05/svg"><img src="/wfo-4000000718-2019-05/svg" style="width: 100%"/></a>
+<a href="/wfo-4000000718-2022-12/svg"><img src="/wfo-4000000718-2022-12/svg" style="width: 100%"/></a>
 
 <p>An example graph for a TaxonName</p>
 <a href="/wfo-4000000718/svg"><img src="/wfo-4000000718/svg" style="width: 100%"/></a>
