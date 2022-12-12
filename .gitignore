@@ -7,3 +7,4 @@ vendor/*
 edit/*
 cache/*
 seed/2021-12.txt.zip
+tests
