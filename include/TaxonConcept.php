@@ -377,7 +377,7 @@ class TaxonConcept{
                     $stats[] = new TaxonConceptStat($rank->val, "Total names with rank '$rank->val'", $rank->count);
                     if(isset($rank->status)){
                         foreach ($rank->status->buckets as $status) {
-                            $status_name = getNewStatusName($status->val);
+                            $status_name = $this->getNewStatusName($status->val);
                             $stats[] = new TaxonConceptStat($rank->val . '-' . $status_name, "Total names with rank '$rank->val' and status '$status_name'", $status->count);
                         }
                     }
@@ -387,7 +387,7 @@ class TaxonConcept{
             // work through the status/rank facets
             if(isset($facets->rank)){
                 foreach ($facets->status->buckets as $status) {
-                    $status_name = getNewStatusName($status->val);
+                    $status_name = $this->getNewStatusName($status->val);
                     $stats[] = new TaxonConceptStat($status_name, "Total names with status '$status_name'", $status->count);
                 }
             }
