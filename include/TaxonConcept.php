@@ -377,7 +377,8 @@ class TaxonConcept{
                     $stats[] = new TaxonConceptStat($rank->val, "Total names with rank '$rank->val'", $rank->count);
                     if(isset($rank->status)){
                         foreach ($rank->status->buckets as $status) {
-                            $stats[] = new TaxonConceptStat($rank->val . '-' . $status->val, "Total names with rank '$rank->val' and status '$status->val'", $status->count);
+                            $status_name = getNewStatusName($status->val);
+                            $stats[] = new TaxonConceptStat($rank->val . '-' . $status_name, "Total names with rank '$rank->val' and status '$status_name'", $status->count);
                         }
                     }
                 }
@@ -386,7 +387,8 @@ class TaxonConcept{
             // work through the status/rank facets
             if(isset($facets->rank)){
                 foreach ($facets->status->buckets as $status) {
-                    $stats[] = new TaxonConceptStat($status->val, "Total names with status '$status->val'", $status->count);
+                    $status_name = getNewStatusName($status->val);
+                    $stats[] = new TaxonConceptStat($status_name, "Total names with status '$status_name'", $status->count);
                 }
             }
 
@@ -398,7 +400,25 @@ class TaxonConcept{
     }
 
 
-    
+    private function getNewStatusName($status_name){
+
+        switch ($status_name) {
+            case 'accepted':
+                $status_name = 'Accepted';
+                break;
+            case 'synonym':
+                $status_name = 'Synonym';
+                break;
+            case 'unplaced':
+                $status_name = 'Unchecked';
+                break;
+            default:
+                $status_name = 'Dubious';
+                break;
+        }
+
+        return $status_name;
+    }
 
 
 }
