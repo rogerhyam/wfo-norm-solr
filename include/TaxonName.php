@@ -39,32 +39,32 @@ class TaxonName{
         $this->name = isset($name_data->full_name_string_no_authors_plain_s) ? $name_data->full_name_string_no_authors_plain_s : null;
         $this->fullNameString = isset($name_data->full_name_string_html_s) ? $name_data->full_name_string_html_s : null;
         $this->title = "TaxonName: " . $this->id . " " . $this->name; // some libraries need a title for every object.
-        $this->authorship = isset($name_data->authors_string_s) ?  $name_data->authors_string_s : null;
-        $this->authorshipHtml = isset($name_data->authors_string_html_s) ? $name_data->authors_string_html_s: null;
+        $this->authorship = isset($name_data->authors_string_s) ?  $name_data->authors_string_s : "";
+        $this->authorshipHtml = isset($name_data->authors_string_html_s) ? $name_data->authors_string_html_s : "";
        
-        $this->familyName = isset($name_data->placed_in_family_s) ? $name_data->placed_in_family_s : null;
+        $this->familyName = isset($name_data->placed_in_family_s) ? $name_data->placed_in_family_s : "";
         
         if($name_data->rank_s == 'genus'){
             // it is a genus so we set the name
-            $this->genusName = isset($name_data->name_string_s) ? $name_data->name_string_s : null;
+            $this->genusName = isset($name_data->name_string_s) ? $name_data->name_string_s : "";
         }else{
             // it is not a genus so we set the genus part if there is one
-            $this->genusName = isset($name_data->genus_string_s) ? $name_data->genus_string_s : $this->genusName = null;
+            $this->genusName = isset($name_data->genus_string_s) ? $name_data->genus_string_s : $this->genusName = "";
         }
         
         if($name_data->rank_s == 'species'){
             // it is a species so we set the name
-            $this->specificEpithet = isset($name_data->name_string_s) ? $name_data->name_string_s : null;
+            $this->specificEpithet = isset($name_data->name_string_s) ? $name_data->name_string_s : "";
         }else{
             // it is maybe below species so we specific epithet
-            $this->specificEpithet = isset($name_data->species_string_s) ? $name_data->species_string_s : null;
+            $this->specificEpithet = isset($name_data->species_string_s) ? $name_data->species_string_s : "";
         }
 
-        $this->publicationCitation = isset($name_data->citation_micro_s) ? $name_data->citation_micro_s : null;
+        $this->publicationCitation = isset($name_data->citation_micro_s) ? $name_data->citation_micro_s : "";
 
-        $this->publicationID = null; // FIXME: Version 2
+        $this->publicationID = ""; // FIXME: Version 2
 
-        $this->nomenclatorID = null; 
+        $this->nomenclatorID = ""; 
         if(isset($name_data->identifiers_other_kind_ss)){
             for ($i=0; $i < count($name_data->identifiers_other_kind_ss); $i++) { 
               $kind = $name_data->identifiers_other_kind_ss[$i];
@@ -75,11 +75,10 @@ class TaxonName{
             }
         }
 
-        $this->rank = isset($name_data->rank_s) ?  $name_data->rank_s : null;
+        $this->rank = isset($name_data->rank_s) ?  $name_data->rank_s : "";
 
         // and bool
         $this->currentPreferredUsageIsSynonym = $name_data->role_s == 'synonym';
-
 
     }
 
