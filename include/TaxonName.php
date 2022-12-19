@@ -83,57 +83,12 @@ class TaxonName{
 
     }
 
-    public static function getById($name_id){
-        
-        if(isset(self::$loaded[$name_id])){
-            return self::$loaded[$name_id];
+    public static function getById($wfo_id){
+        if(isset(self::$loaded[$wfo_id])){
+            return self::$loaded[$wfo_id];
         }
-
-        // get the different versions of this taxon
-        $query = array(
-            'query' => 'wfo_id_s:' . $name_id,
-            'sort' => 'classification_id_s asc'
-        );
-        $response = json_decode(solr_run_search($query));
-
-        // produce a combined version. 
-        // new values overwrite old
-        // we are assuming things are getting better but not counting on it
-        $name_data = array();
-        $name_data['acceptedNamesFor'] = array();
-        $latest_usage = null;
-        foreach ($response->response->docs as $usage) {
-
-            foreach($usage   as $key => $value){
-                $name_data[$key] = $value;
-            }
-
-            // also keep a handle on the taxon for later use
-            $name_data['acceptedNamesFor'][] = $usage->id;
-
-            // get a handle on the latest taxon useage.
-            $latest_usage = $usage;
-            
-        }
-
-        if($latest_usage->role_s == 'synonym'){
-            // if it is a not accepted link to the accepted taxon
-            if(isset($latest_usage->acceptedNameUsageID_s)){
-                $accepted_taxon_id = $latest_usage->acceptedNameUsageID_s . '-' . $latest_usage->classification_id_s;
-                $name_data['currentPreferredUsage'] = $accepted_taxon_id;
-                $name_data['currentPreferredUsageIsSynonym'] = true;
-            }
-        }else{
-            $name_data['currentPreferredUsage'] = $latest_usage->id;
-            $name_data['currentPreferredUsageIsSynonym'] = false;
-        }
-        
-
-        // override the id as this is a name
-        $name_data['id'] = $name_id;
-
-        return new TaxonName((object)$name_data);
-
+        $name_data = solr_get_doc_by_id($wfo_id . '-' . WFO_DEFAULT_VERSION);
+        return new TaxonName($name_data);
     }
 
     public static function getByMatching($name_string, $authors_string ){
@@ -214,8 +169,10 @@ class TaxonName{
     }
 
     public function getCurrentPreferredUsage(){
-        if(isset($this->name_data->currentPreferredUsage)){
-            return TaxonConcept::getById($this->name_data->currentPreferredUsage);
+        if($this->name_data->role_s == 'accepted'){
+            return TaxonConcept::getById($this->name_data->id);
+        }elseif($this->name_data->role_s == 'synonym' && isset($this->name_data->accepted_id_s)){
+            return TaxonConcept::getById($this->name_data->accepted_id_s);
         }else{
             return null;
         }
