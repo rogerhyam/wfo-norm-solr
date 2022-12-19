@@ -173,7 +173,8 @@ class TaxonName{
         }elseif($this->name_data->role_s == 'synonym' && isset($this->name_data->accepted_id_s)){
             return TaxonConcept::getById($this->name_data->accepted_id_s);
         }else{
-            return null;
+            return TaxonConcept::getById($this->name_data->id); // debug
+//            return null;
         }
     }
 
