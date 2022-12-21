@@ -139,6 +139,7 @@ class TaxonConcept{
             $query = array(
                 'query' => 'genus_string_s:' . $this->solr_doc->name_string_s,
                 'filter' => 'role_s:unplaced',
+                'filter' => 'classification_id_s:' . $this->solr_doc->classification_id_s,
                 'fields' => 'id',
                 'offset' => $offset,
                 'sort' => 'full_name_string_alpha_t_sort asc'
@@ -167,6 +168,7 @@ class TaxonConcept{
             $query = array(
                 'query' => 'species_string_s:' . $this->solr_doc->name_string_s,
                 'filter' => 'role_s:unplaced',
+                'filter' => 'classification_id_s:' . $this->solr_doc->classification_id_s,
                 'fields' => 'id',
                 'offset' => $offset,
                 'sort' => 'full_name_string_alpha_t_sort asc'
