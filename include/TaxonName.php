@@ -29,7 +29,7 @@ class TaxonName{
         // add self to the list of created docs
         $this->id = $name_data->id;
         $this->name_data = $name_data;
-        $this->web = 'http://www.worldfloraonline.org/taxon/' . $this->id;
+        $this->web = 'http://www.worldfloraonline.org/taxon/' . $name_data->wfo_id_s;
         
         // keep tags on the fact we exist so we don't get created again
         self::$loaded[$this->id] = $this;
