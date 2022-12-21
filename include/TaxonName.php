@@ -36,7 +36,14 @@ class TaxonName{
 
         // set those string fields
         $this->guid = get_uri($this->id);
-        $this->name = isset($name_data->full_name_string_no_authors_plain_s) ? $name_data->full_name_string_no_authors_plain_s : null;
+
+//        $this->name = isset($name_data->full_name_string_no_authors_plain_s) ? $name_data->full_name_string_no_authors_plain_s : null;        
+
+        // in order to get the hybrid symbol in we need to do this
+        $authors = isset($name_data->authors_string_s) ? $name_data->authors_string_s : "";
+        $name_with_authors = isset($name_data->full_name_string_plain_s) ? $name_data->full_name_string_plain_s : "";
+        $this->name = trim(str_replace($authors, '', $name_with_authors));
+              
         $this->fullNameString = isset($name_data->full_name_string_html_s) ? $name_data->full_name_string_html_s : null;
         $this->title = "TaxonName: " . $this->id . " " . $this->name; // some libraries need a title for every object.
         $this->authorship = isset($name_data->authors_string_s) ?  $name_data->authors_string_s : "";
