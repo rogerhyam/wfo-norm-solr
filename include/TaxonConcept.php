@@ -166,13 +166,12 @@ class TaxonConcept{
         if($this->solr_doc->rank_s == 'species'){
 
             $query = array(
-                'query' => 'species_string_s:' . $this->solr_doc->name_string_s,
-                'filter' => ['role_s:unplaced', 'classification_id_s:' . $this->solr_doc->classification_id_s],
+                'query' => 'species_string_s:' . $this->solr_doc->name_string_s ,
+                'filter' => ['role_s:unplaced', 'classification_id_s:' . $this->solr_doc->classification_id_s , 'genus_string_s:' . $this->solr_doc->genus_string_s],
                 'fields' => 'id',
                 'offset' => $offset,
                 'sort' => 'full_name_string_alpha_t_sort asc'
             );
-
 
             // -1 is unlimited but in Solr you just miss the parameter 
             if($limit >= 0){
@@ -189,6 +188,7 @@ class TaxonConcept{
             }
 
         }
+
 
         /*
             if we are a family then we are interested in genera alone
