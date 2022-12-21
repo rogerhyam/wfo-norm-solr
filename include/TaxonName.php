@@ -27,7 +27,7 @@ class TaxonName{
 
     public function __construct($name_data){
         // add self to the list of created docs
-        $this->id =  $name_data->id;
+        $this->id =  $name_data->wfo_id_s; //$name_data->id;
         $this->name_data = $name_data;
         $this->web = 'http://www.worldfloraonline.org/taxon/' . $name_data->wfo_id_s;
         
