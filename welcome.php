@@ -119,23 +119,20 @@ qualified by a classification version. The version format is the year followed b
 </p>
 
 <p>
-    We bend the semantics slightly for the sake of utility. If a name is a synonym it is not a TaxonConcept but we still give it a  
+    We bend the semantics slightly for the sake of utility. If a record is a synonym it is semantically not a TaxonConcept but a TaxonName. The versioned WFO IDs for synonyms will therefore 301 redirect to the name entry only.
 
-</p>
-
-
-An example of how this can go wrong is that not every name has an associated taxon in every classification.
-If a TaxonName's role within a classification is as a synonym there is no associated taxon in that classification.
 The name <a href="<?php echo get_uri('wfo-0000615907') ?>" ><?php echo get_uri('wfo-0000615907') ?></a> (<i>Comandra elliptica</i> Raf.)
 Is a synonym in the classification 2022-12.
-If you were to create the taxon URI 
-<a style="color: red" href="<?php echo get_uri('wfo-0000615907-2022-12') ?>" ><?php echo get_uri('wfo-0000615907-2022-12') ?></a> by tagging the version id on the end
-and try to retrieve data you would currently be redirect to the taxon 
-<a href="<?php echo get_uri('wfo-0000615918-2022-12') ?>" ><?php echo get_uri('wfo-0000615918-2022-12') ?></a> (<i>Comandra umbellata</i> (L.) Nutt.)
+The versioned URI of that name is this:
+<a href="<?php echo get_uri('wfo-0000615907-2022-12') ?>" ><?php echo get_uri('wfo-0000615907-2022-12') ?></a> If you click on it in a web browser you will be redirected to the taxon page in the WFO Plant List for the accepted name.
+
+If on the other hand you were to call for <strong>data</strong> for that name using an HTTP Accept header of application/json, perhaps with the curl command 
+</p>
+<code>curl -I -H "Accept: application/json" <?php echo get_uri('wfo-0000615907') ?></code>
+<p>
+then you would get a 301 redirect to the accepted name <a href="<?php echo get_uri('wfo-0000615918-2022-12') ?>" ><?php echo get_uri('wfo-0000615918-2022-12') ?></a>
+(<i>Comandra umbellata</i> (L.) Nutt.)
 in which <i>Comandra elliptica</i> Raf. is a synonym.
-This behaviour is technically wrong and may change to returning a HTTP 400 Bad Request or something else in future.
-If you were to use the created URI in a web browser you would be redirected to the synonyms page in the website.
-Dereferencing the name identifier would have provided a list of its usages in different classifications and is the correct approach.
 </p>
 <h3>Properties</h3>
 <p>

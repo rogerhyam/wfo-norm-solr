@@ -26,7 +26,7 @@ if(strlen($path_parts[0]) == 'index.php'){
 //print_r($path_parts);
 //exit;
 
-$format = get_format($path_parts);
+$format = get_format($path_parts); // this redirects humans
 
 // first argument is blank or the wfo-id.
 // It may be qualified with a date or not.
@@ -88,18 +88,6 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
         exit;
     }
 
-    // It should be impossible to request a versioned synonym
-    // if a wfo "taxon" is sunk it isn't a taxon it is a name.
-    // we wouldn't publish these links or expect people to arrive here
-    // but just in case.
-    if($taxon_solr->role_s == 'synonym'){
-
-        $redirect_url = get_uri($taxon_solr->accepted_id_s);
-        header("Location: $redirect_url",TRUE,303);
-        echo "See Other: The accepted taxon for this name";
-        exit;
-    }
-    
     // Let's start building.
     $taxon_uri = get_uri($taxon_solr->id);
 
@@ -294,15 +282,16 @@ function getTaxonNameResource($graph, $wfo_id){
 }
 
 function get_format($path_parts){
-        
+
     $format_string = null;
     $formats = \EasyRdf\Format::getFormats();
 
-    // if we don't have any format in URL
-    if(count($path_parts) < 2 || strlen($path_parts[1]) < 1){
-
-        // if the format isn't in the path then they will be redirected somewhere
-
+    // get the format if we have one 
+    $format_string = null;
+    if(count($path_parts) > 1 && strlen($path_parts[1]) > 1){
+        // from the path
+        $format_string = $path_parts[1];
+    }else{
         // try and get it from the http header
         $headers = getallheaders();
         if(isset($headers['Accept'])){
@@ -322,101 +311,117 @@ function get_format($path_parts){
                 if($format_string) break;
             }
         }
-
-        if(!$format_string){
-            
-            // not got a format string so assume HUMAN and send to main website
-
-            // there is an exception for when they are requesting a classification
-            // there is not human readable page for that so send them to the downloads page.
-
-            /*
-            if(preg_match('/^[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
-                $redirect_url = "http://www.worldfloraonline.org/downloadData";
-            }else{
-                // otherwise send them to the taxon page
-                $redirect_url = "http://www.worldfloraonline.org/taxon/" . substr($path_parts[0], 0, 14);
-            }
-            */
-
-            // updated 2023-01-13 - forward to WFO Plant List rather than main portal
-
-            if(preg_match('/^[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
-
-                // this is just the classification as a whole
-                $redirect_url = "https://wfoplantlist.org/plant-list/" . $path_parts[0];
-            }else{
-                // they are after a name or a taxon so we need to work things out a bit
-
-                if(preg_match('/^wfo-[0-9]{10}$/', $path_parts[0])){
-                    // we have an unqualified wfo id we need to convert it to the latest classification
-                    $wfo_qualified_id = $path_parts[0] . '-' . WFO_DEFAULT_VERSION;
-                }else{
-                    // wfo is already qualified
-                    $wfo_qualified_id = $path_parts[0];
-                }
-
-                // is it a synonym or not?
-                $taxon_solr = solr_get_doc_by_id($wfo_qualified_id);
-
-                if(!$taxon_solr){
-                    header("HTTP/1.1 404 Not Found");
-                    echo "Not found: {$path_parts[0]}";
-                    exit;
-                }
-
-                switch ($taxon_solr->role_s) {
-                    case 'accepted':
-                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
-                        break;
-                    case 'synonym':
-                        $syn_wfo = substr($taxon_solr->id, 0, 14);
-                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->accepted_id_s}?matched_id={$syn_wfo}";
-                        break;
-                    case 'unplaced':
-                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
-                        break;
-                    case 'deprecated':
-                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
-                        break;
-                    default:
-                        echo "Unknown role type: {$taxon_solr->role_s}";
-                        exit;
-                        break;
-                }
-
-            }
-                   
-        }else{
-            // got a format string so send them to that format
-            $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
-            . "://$_SERVER[HTTP_HOST]/"
-            . $path_parts[0]
-            . '/'
-            . $format_string;
-        }
-
-        // redirect them
-        // always 303 redirect from the core object URIs
-        header("Location: $redirect_url",TRUE,303);
-        echo "Found: Redirecting to data";
-        exit;
-
-
-    }else{
-
-        // we have a format in the url string
-        if(in_array($path_parts[1], $formats)){
-            $format_string = $path_parts[1];
-        }else{
-            header("HTTP/1.0 400 Bad Request");
-            echo "Unrecognised data format \"{$path_parts[1]}\"";
-            exit;
-        }
-
     }
 
-    return $format_string;
+    // throw wobbly if we don't recognize it
+    if($format_string && !in_array($format_string, $formats)){
+        header("HTTP/1.0 400 Bad Request");
+        echo "Unrecognised data format \"{$path_parts[1]}\"";
+        exit;
+    }
+
+    // if no format or it is html
+    if(!$format_string){
+
+        if(preg_match('/^[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
+
+            // this is just the classification as a whole
+            $redirect_url = "https://wfoplantlist.org/plant-list/" . $path_parts[0];
+
+        }else{
+            // they are after a name or a taxon so we need to work things out a bit
+
+            if(preg_match('/^wfo-[0-9]{10}$/', $path_parts[0])){
+                // we have an unqualified wfo id we need to convert it to the latest classification
+                $wfo_qualified_id = $path_parts[0] . '-' . WFO_DEFAULT_VERSION;
+            }else{
+                // wfo is already qualified
+                $wfo_qualified_id = $path_parts[0];
+            }
+
+            // is it a synonym or not?
+            $taxon_solr = solr_get_doc_by_id($wfo_qualified_id);
+
+            if(!$taxon_solr){
+                header("HTTP/1.1 404 Not Found");
+                echo "Not found: {$path_parts[0]}";
+                exit;
+            }
+
+            switch ($taxon_solr->role_s) {
+                case 'accepted':
+                    $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
+                    break;
+                case 'synonym':
+                    $syn_wfo = substr($taxon_solr->id, 0, 14);
+                    $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->accepted_id_s}?matched_id={$syn_wfo}";
+                    break;
+                case 'unplaced':
+                    $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
+                    break;
+                case 'deprecated':
+                    $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
+                    break;
+                default:
+                    echo "Unknown role type: {$taxon_solr->role_s}";
+                    exit;
+                    break;
+            }
+
+        }
+                   
+    }else{
+
+        // they are asking for machine readable stuff
+
+        // are they asking for a name but with classification qualifier?
+        if(preg_match('/^wfo-[0-9]{10}-[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
+            $wfo_qualified_id = $path_parts[0];
+
+            $taxon_solr = solr_get_doc_by_id($wfo_qualified_id);
+
+            if(!$taxon_solr){
+                header("HTTP/1.1 404 Not Found");
+                echo "Not found: {$path_parts[0]}";
+                exit;
+            }
+
+            if(in_array($taxon_solr->role_s, array('synonym', 'unplaced', 'deprecated'))){
+
+                // they are asking for a name but have included a classification version - implying a taxon
+                // simply redirect to the name.
+                $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
+                    . "://$_SERVER[HTTP_HOST]/"
+                    . substr($path_parts[0], 0,14);
+                header("Location: $redirect_url",TRUE,301);
+                echo "Moved: Name not taxon";
+                exit;
+
+            }
+        }
+
+        // are they actually asking for the metadata uri?
+        if(count($path_parts) > 1 && strlen($path_parts[1]) > 1){
+            return $format_string;
+        }else{
+
+            // format string was in header so redirect to metadata url
+            // 303 redirect to the format version
+            $redirect_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http")
+                . "://$_SERVER[HTTP_HOST]/"
+                . $path_parts[0]
+                . '/'
+                . $format_string;
+
+        }
+
+    } // has format string
+
+    // redirect them
+    // always 303 redirect from the core object URIs
+    header("Location: $redirect_url",TRUE,303);
+    echo "Found: Redirecting to data";
+    exit;
     
 }
 
