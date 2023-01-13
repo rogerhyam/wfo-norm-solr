@@ -108,7 +108,6 @@ if($version_id && !$wfo_root_id && !$wfo_qualified_id){
 
     // nice link the human readable web page
 
-  
     // taxonomic status mixes synonymy and editorial so make it pure!
     if(!preg_match('/Synonym/', $taxon_solr->role_s)){
         $taxon_rdf->set('wfo:editorialStatus', $taxon_solr->role_s);
@@ -330,12 +329,18 @@ function get_format($path_parts){
 
             // there is an exception for when they are requesting a classification
             // there is not human readable page for that so send them to the downloads page.
+
+            /*
             if(preg_match('/^[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
                 $redirect_url = "http://www.worldfloraonline.org/downloadData";
             }else{
                 // otherwise send them to the taxon page
                 $redirect_url = "http://www.worldfloraonline.org/taxon/" . substr($path_parts[0], 0, 14);
             }
+            */
+
+            // updated 2023-01-13 - forward to WFO Plant List rather than main portal
+            $redirect_url = "https://wfoplantlist.org/plant-list/" . $path_parts[0];
                    
         }else{
             // got a format string so send them to that format
