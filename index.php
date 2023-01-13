@@ -340,7 +340,52 @@ function get_format($path_parts){
             */
 
             // updated 2023-01-13 - forward to WFO Plant List rather than main portal
-            $redirect_url = "https://wfoplantlist.org/plant-list/" . $path_parts[0];
+
+            if(preg_match('/^[0-9]{4}-[0-9]{2}$/', $path_parts[0])){
+
+                // this is just the classification as a whole
+                $redirect_url = "https://wfoplantlist.org/plant-list/" . $path_parts[0];
+            }else{
+                // they are after a name or a taxon so we need to work things out a bit
+
+                if(preg_match('/^wfo-[0-9]{10}$/', $path_parts[0])){
+                    // we have an unqualified wfo id we need to convert it to the latest classification
+                    $wfo_qualified_id = $path_parts[0] . '-' . WFO_DEFAULT_VERSION;
+                }else{
+                    // wfo is already qualified
+                    $wfo_qualified_id = $path_parts[0];
+                }
+
+                // is it a synonym or not?
+                $taxon_solr = solr_get_doc_by_id($wfo_qualified_id);
+
+                if(!$taxon_solr){
+                    header("HTTP/1.1 404 Not Found");
+                    echo "Not found: {$path_parts[0]}";
+                    exit;
+                }
+
+                switch ($taxon_solr->role_s) {
+                    case 'accepted':
+                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
+                        break;
+                    case 'synonym':
+                        $syn_wfo = substr($taxon_solr->id, 0, 14);
+                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->accepted_id_s}?matched_id={$syn_wfo}";
+                        break;
+                    case 'unplaced':
+                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
+                        break;
+                    case 'deprecated':
+                        $redirect_url = "https://wfoplantlist.org/plant-list/taxon/{$taxon_solr->id}";
+                        break;
+                    default:
+                        echo "Unknown role type: {$taxon_solr->role_s}";
+                        exit;
+                        break;
+                }
+
+            }
                    
         }else{
             // got a format string so send them to that format
