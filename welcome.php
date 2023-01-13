@@ -98,8 +98,7 @@ $formats = \EasyRdf\Format::getFormats();
 
 <p>
 All TaxonConcepts and TaxonNames are identified with URIs which resolve according to semantic web best practices (see below).
-These identifiers are also used in the GraphQL accessible data. They are intended to be persistent and can be stored.
-</p>
+These identifiers are also used in the GraphQL accessible data. They are intended to be persistent and can be stored. The URIs are based on the WFO IDs used elsewhere.</p>
 <p>
 <strong>TaxonNames</strong> identifiers take the form <a href="<?php echo get_uri('wfo-0001048237') ?>" ><?php echo get_uri('wfo-0001048237') ?></a>. The final part of the URI is the same as the identifier 
 used in the live web pages for the current version of the WFO. There is a one to one relationship between names, as created under the International Code for Botanical Nomenclature,
@@ -112,8 +111,20 @@ qualified by a classification version. The version format is the year followed b
 </p>
 
 <p>
-Note that although the format of identifiers is described here (because it is useful for understanding and debugging) you should not construct them programmatically
-but treat them as opaque strings. An example of how this can go wrong is that not every name has an associated taxon in every classification.
+    Note that although the format of identifiers is described here (because it is useful for understanding and debugging) you should not construct them programmatically
+    but treat them as opaque strings.
+
+    It is possible to construct taxon concept identifiers for taxa that don't exist. If a name did not occur in an earlier version of the classification but you create a URI
+    that consists of the WFO ID plus the version of that classification you will get a 404 NOT FOUND response.
+</p>
+
+<p>
+    We bend the semantics slightly for the sake of utility. If a name is a synonym it is not a TaxonConcept but we still give it a  
+
+</p>
+
+
+An example of how this can go wrong is that not every name has an associated taxon in every classification.
 If a TaxonName's role within a classification is as a synonym there is no associated taxon in that classification.
 The name <a href="<?php echo get_uri('wfo-0000615907') ?>" ><?php echo get_uri('wfo-0000615907') ?></a> (<i>Comandra elliptica</i> Raf.)
 Is a synonym in the classification 2022-12.
