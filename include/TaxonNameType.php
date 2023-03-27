@@ -5,8 +5,6 @@ use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\ListOfType;
 use GraphQL\Type\Definition\EnumType;
 
-
-
 require_once('include/TypeRegister.php');
 
 class TaxonNameType extends ObjectType
@@ -82,6 +80,7 @@ class TaxonNameType extends ObjectType
                         'description' => 'Nomenclator ID (IPNI, etc.)'
                     ],
 
+                    /*
                     'acceptedNameFor' => [
                         'type' => Type::listOf(TypeRegister::taxonConceptType()),
                         'resolve' => function($name){
@@ -91,6 +90,7 @@ class TaxonNameType extends ObjectType
                         currentPreferredUsage will return the TaxonConcept in which this is considered a'
 
                     ],
+                    
                     'currentPreferredUsage' => [
                         'type' => TypeRegister::taxonConceptType(),
                         'resolve' => function($name){
@@ -99,7 +99,7 @@ class TaxonNameType extends ObjectType
                         'description' => 'The TaxonConcept to which this TaxonName is assigned 
                         (either as the accepted name or a synonym) in the currently preferred (most recent) vesion of the WFO classification.'
                     ],
-
+*/
                     'currentPreferredUsageIsSynonym' =>[
                         'type' => Type::boolean(),
                         'description' => "Whether this name is a synonym in the currently preferred (most recent) WFO classification.
