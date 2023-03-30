@@ -1,5 +1,7 @@
 # wfo-norm-solr
 
+__DEPRECATED__ This is now replaced by the code in wfo-plant-list repo
+
 System for presenting normative lists of WFO names - based on Solr index
 
 This is a replacement for an early MySQL based implementation
